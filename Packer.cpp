@@ -43,7 +43,7 @@ size_t Packer::create_data_packet(char** buf, uint32_t len, uint16_t sequence_nu
     bufLen -= bytesRead;
     uint32_t totalPacketSize = bytesRead + headerLen;
     if(bytesRead <= 0) {
-        std::cout << "Packer: No bytes to read from packer\n";
+        //std::cout << "Packer: No bytes to read from packer\n";
         return 0;
     }
 

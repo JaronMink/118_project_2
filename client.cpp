@@ -5,19 +5,47 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>    // structures for stat
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>      // define structures like hostent
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "JJP.h"
 
-void error(char *msg)
+void error(const char *msg)
 {
-    perror(msg);
-    exit(0);
+  perror(msg);
+  exit(1);
 }
+
+void readFileContent(int fileFD, char** content, int* contentLen) {
+  struct stat st;
+  if(fstat(fileFD, &st) < 0) {
+    error("ERROT: cannot read requested files stats");
+  }
+
+  int fileLen = st.st_size; //byte size of file
+  char* fileStr = (char*) malloc(sizeof(char) * fileLen);
+
+  int bytesTotal = 0;
+  int bytesRead = 0;
+  while((bytesRead = read(fileFD, (fileStr + bytesTotal), fileLen - bytesRead)) > 0) {
+    bytesTotal += bytesRead;
+  }
+  if(bytesRead < 0) {
+    error("ERROR: cannot read from specified file");
+    }
+
+  //return contents and length
+  *content = fileStr;
+  *contentLen = fileLen;
+  return;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -56,14 +84,27 @@ int main(int argc, char *argv[])
   		exit(1);
   	}
 
-    //n = mJJP.write("Hello",strlen("Hello"));  // write to the socket
+
+    /*int requestedFD;
+    if((requestedFD = open("test.txt", O_RDONLY)) < 0) {
+        char* fileContent = NULL;
+        int fileLen = -1;
+        readFileContent(requestedFD, &fileContent, &fileLen);
+        mJJP.write(fileContent, 500);
+      }*/
+
+    n = mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
     mJJP.connect((struct sockaddr*) &remaddr, sizeof(remaddr));
 
     //printf("Please enter the message: ");
     //memset(buffer,0, 256);
     //fgets(buffer,255,stdin);  // read message
 
-    n = mJJP.write("Hello",strlen("Hello"));  // write to the socket
+    //n = mJJP.write("Hello",strlen("Hello"));  // write to the socket
     if (n < 0)
          error("ERROR writing to socket");
 

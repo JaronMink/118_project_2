@@ -16,12 +16,17 @@
 #include <list>
 #include <thread>
 #include <mutex>
+#include <fcntl.h>
 #include "JJP.h"
 std::mutex buf_mutex, buf_mutex2;
 
 
 JJP::JJP(int domain, int type, int protocol){
     mSockfd = ::socket(domain, type, protocol);
+    int flags;
+    if (-1 == (flags = fcntl(mSockfd, F_GETFL, 0)))
+      flags = 0;
+    fcntl(mSockfd, F_SETFL, flags | O_NONBLOCK);
     if (mSockfd < 0)
       perror("ERROR opening socket");
     mSender.set_sockfd(mSockfd);
@@ -71,31 +76,52 @@ void JJP::processing_thread2() {
     uint16_t sequence_number = 0;
     char *rcvd_packet, *sending_packet, *update_packet;
     uint16_t ackNum, receiveWindow;
+    int isACKorFIN;
     int updateTimer = 10; //every 10 loops when rwnd is 0 send update
-    while(!receivedFIN) {
+    while(true) {
+        std::lock(buf_mutex, buf_mutex2);
+        long rcvd_len = read_single_packet(&rcvd_packet);
+        if (rcvd_len > 0) {
+          printf("Receiving packet of byte length %d\n", rcvd_len);
+          if((isACKorFIN = mReceiver.receive_packet(rcvd_packet, rcvd_len, ackNum, receiveWindow, receivedACK, receivedFIN, receivedSYN)) < 0)
+              perror("error receiving packet");
+        }
 
-        size_t rcvd_len = read_single_packet(&rcvd_packet);
-        if(mReceiver.receive_packet(rcvd_packet, rcvd_len, ackNum, receiveWindow, receivedACK, receivedFIN, receivedSYN) < 0)
-            perror("error receiving packet");
-        //if Data, send ack with dontStore as true
-        //if FIN disconnect and begin ending
-        //if ACK notify sender
-        //update rwnd
-        
-        
-        //mReceiver.receive_packet(rcvd_packet, rcvd_len, ackNum, receiveWindow,) < 0)
-        //if (isACKorFIN)
-        {}//mSender.notify_ACK(
+        buf_mutex.unlock();
+        buf_mutex2.unlock();
             //todo,
-                //if Data, send ack with dontStore as true
+                //if Data, send ack with dontStore as true -done
                 //if FIN disconnect and begin ending
-                //if ACK notify sender
-                //update rwnd
+                //if ACK notify sender -done
+                //update rwnd -done
 
-        uint32_t avaliable_space = mSender.get_avaliable_space();
-        size_t sending_packet_len = mPacker.create_data_packet(&sending_packet, avaliable_space, sequence_number);
-        mSender.send(sending_packet, avaliable_space, sequence_number, false);
-        mSender.resend_expired_packets();
+        std::lock(buf_mutex, buf_mutex2);
+        std::cout << "New rwnd: " << receiveWindow << std::endl;
+        //mSender.update_rwnd(receiveWindow);
+        if (receivedACK)
+          mSender.notify_ACK(ackNum);
+        /*
+        if (receivedFIN)
+          {}//
+        if (rcvd_len > 12) {
+          char* ACKPacket;
+          size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, ackNum);
+          sequence_number = (sequence_number + ACKPacket_len) % 30720;
+          mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
+        }*/
+
+        uint32_t available_space = mSender.get_avaliable_space();
+        if (available_space > 20)
+          available_space = 20;
+        size_t sending_packet_len = mPacker.create_data_packet(&sending_packet, available_space, sequence_number);
+        if (sending_packet_len > 0) {
+          printf("Packet length: %d\n", sending_packet_len);
+          mSender.send(sending_packet, available_space, sequence_number, false);
+          sequence_number = (sequence_number + sending_packet_len) % 30720;
+        }
+        //mSender.resend_expired_packets();
+
+        /*
 
         //periodically update if receiver is 0
         if(receiveWindow == 0) {
@@ -109,6 +135,10 @@ void JJP::processing_thread2() {
                 mSender.send(update_packet, update_size, sequence_number, false);
             }
         }
+        */
+        buf_mutex.unlock();
+        buf_mutex2.unlock();
+
 
     }
 }
@@ -166,10 +196,10 @@ size_t JJP::read_single_packet(char** packet) {
     struct sockaddr_in* client_addr;
     socklen_t clilen = sizeof(client_addr);
 
-    size_t totalBytesRead = ::recvfrom(mSockfd, header, 12, 0, (struct sockaddr*) client_addr, &clilen);
+    long totalBytesRead = ::recvfrom(mSockfd, header, 12, 0, (struct sockaddr*) client_addr, &clilen);
 
     //if we didn't read anything, assume we don't have any data to read.
-    if (totalBytesRead == 0) {
+    if (totalBytesRead <= 0) {
         *packet = NULL;
         return 0;
     }
@@ -197,7 +227,7 @@ size_t JJP::read_single_packet(char** packet) {
 int JJP::accept(struct sockaddr *addr, socklen_t addrlen){
   mSender.set_recipient(addr,addrlen);
 
-  std::thread process(&JJP::processing_thread, this);
+  std::thread process(&JJP::processing_thread2, this);
   process.detach();
   // don't block, we must return the sockfd
 
@@ -207,24 +237,24 @@ int JJP::accept(struct sockaddr *addr, socklen_t addrlen){
 int JJP::connect(struct sockaddr *addr, socklen_t addrlen){
   mSender.set_recipient(addr,addrlen);
 
-  std::thread process(&JJP::processing_thread, this);
+  std::thread process(&JJP::processing_thread2, this);
   process.detach();
 
   return 0;
 }
 
 ssize_t JJP::write(const void *buf, size_t nbytes) {
-    std::lock(buf_mutex, buf_mutex2);
+    //std::lock(buf_mutex, buf_mutex2);
     int i = mPacker.store((char*)buf, nbytes);
-    buf_mutex.unlock();
-    buf_mutex2.unlock();
+    //buf_mutex.unlock();
+    //buf_mutex2.unlock();
     return i;
 }
 
 ssize_t JJP::read(void *buf, size_t nbytes) {
-    std::lock(buf_mutex, buf_mutex2);
+    //std::lock(buf_mutex, buf_mutex2);
     int i = mReceiver.read(buf, nbytes);
-    buf_mutex.unlock();
-    buf_mutex2.unlock();
+    //buf_mutex.unlock();
+    //buf_mutex2.unlock();
     return i;
 }
