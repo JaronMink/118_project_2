@@ -32,10 +32,23 @@ void Sender::notify_ACK(uint16_t seq_num) {
     for(std::list<PacketObj>::iterator it = packet_buffer.begin(); it != packet_buffer.end(); it++) {
         if(it->sequence_num == seq_num) {
             it->isAcked = true;
-            return;
+            break;
         }
     }
-
+    std::cerr << "packets before:" << packet_buffer.size() << std::endl;
+    //move window up
+    bool hasMovedWindow = true;
+    for(std::list<PacketObj>::iterator it = packet_buffer.begin(); hasMovedWindow;) {
+        if(it->isAcked) {
+            next_byte-=it->packet_len;
+            it = packet_buffer.erase(it);
+            std::cerr << "moved window once\n";
+            hasMovedWindow = true;
+        } else {
+            hasMovedWindow = false;
+        }
+    }
+    std::cerr << "packets after:" << packet_buffer.size() << std::endl << std::endl;
 }
 
 void Sender::set_recipient(struct sockaddr *addr, socklen_t addrlen){
@@ -54,25 +67,31 @@ size_t Sender::get_avaliable_space(){
 //go through all packets and resend expired ones
 void Sender::resend_expired_packets() {
     for(std::list<PacketObj>::iterator it = packet_buffer.begin(); it != packet_buffer.end(); it++) {
-        if(packet_has_timed_out(*it)) {
-            send(it->packet, it->packet_len, it->sequence_num );
+        if((!it->isAcked) && packet_has_timed_out(*it)) {
+            std::cout <<"resending!\n"<< std::endl;
+            send(it->packet, it->packet_len, it->sequence_num, true);
         }
     }
 }
 
-size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num){
+size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool isResend){
     if(((long)get_avaliable_space() - (long) packet_len) < 0) { //if we don't have enough space to hold packet, do nothing
+        std::cerr << "Not enough space!"<< std::endl;
         return 0;
     }
     //write to socket
-    ::sendto(mSockfd, packet, packet_len, 0, m_servaddr, sizeof(m_servaddr));
-    //store in object
-    PacketObj new_packet_object(packet, packet_len, seq_num);
-    packet_buffer.push_back(new_packet_object);
-    next_byte += packet_len;
+    //if(sendto(mSockfd, "hello", strlen("hello"), 0, m_servaddr, m_servlen) == -1)
+      //  perror("error:");
+    sendto(mSockfd, packet, packet_len, 0, m_servaddr, m_servlen);
+    std::cout << "Sending packet " << seq_num << " " << cwnd << std::endl;
+   
+    if(!isResend) {
+        //store in object
+        PacketObj new_packet_object(packet, packet_len, seq_num);
+        packet_buffer.push_back(new_packet_object);
+        next_byte += packet_len;
+    }
 
-
-    //set up alarm for res
     return packet_len;
 }
 

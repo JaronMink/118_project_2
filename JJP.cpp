@@ -55,7 +55,7 @@ void JJP::processing_thread() {
       size_t packet_len = mPacker.create_data_packet(packet, 1024, sequence_num);
       if (packet_len > 0) {
         printf("Packet length: %d\n", packet_len);
-        printf("%d\n", mSender.send(*packet, packet_len, sequence_num));
+        printf("%d\n", mSender.send(*packet, packet_len, sequence_num, false));
       }
     //}
 

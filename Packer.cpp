@@ -32,7 +32,7 @@ size_t Packer::store(const char* str, size_t len) {
 
 //read into buf and return size of packet
 size_t Packer::create_data_packet(char** buf, uint32_t len, uint16_t sequence_number){
-    size_t dataLen = len - headerLen;
+    long dataLen = len - headerLen;
     if(dataLen <= 0 || dataLen > (1024 - headerLen)) { //if we don't have enough space to put any data, or packet is too big return a nullptr
         return 0;
     }
