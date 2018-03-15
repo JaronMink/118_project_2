@@ -20,8 +20,8 @@ JJP::JJP(int domain, int type, int protocol){
     mSockfd = ::socket(domain, type, protocol);
     if (mSockfd < 0)
       perror("ERROR opening socket");
-    //mSender.set_sockfd(mSockfd);
-    //mReceiver.set_sockfd(mSockfd);
+    mSender.set_sockfd(mSockfd);
+    mReceiver.set_sockfd(mSockfd);
 }
 
 JJP::~JJP() {
@@ -40,7 +40,6 @@ int JJP::listen(int backlog){
     return ::listen(mSockfd, backlog);
 }
 void JJP::processing_thread() {
-  /*
   while (1) {
     int n;
     size_t bytesRead = 0;
@@ -74,11 +73,11 @@ void JJP::processing_thread() {
       if (isACKorFIN)
         {}//mSender.notify_ACK(
     }
-  }*/
+  }
 }
 
 int JJP::accept(struct sockaddr *addr, socklen_t addrlen){
-  //mSender.set_recipient(addr,sizeof(addr));
+  mSender.set_recipient(addr,sizeof(addr));
 
   std::thread process(&JJP::processing_thread, this);
   process.detach();
@@ -88,7 +87,7 @@ int JJP::accept(struct sockaddr *addr, socklen_t addrlen){
 }
 
 int JJP::connect(struct sockaddr *addr, socklen_t addrlen){
-  //mSender.set_recipient(addr,addrlen);
+  mSender.set_recipient(addr,addrlen);
 
   std::thread process(&JJP::processing_thread, this);
   process.detach();
