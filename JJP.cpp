@@ -148,6 +148,12 @@ size_t JJP::read_single_packet(char** packet) {
     socklen_t clilen = sizeof(client_addr);
     
     size_t totalBytesRead = ::recvfrom(mSockfd, header, 12, 0, (struct sockaddr*) client_addr, &clilen);
+    
+    //if we didn't read anything, assume we don't have any data to read.
+    if (totalBytesRead == 0) {
+        *packet = NULL;
+        return 0;
+    }
     while(totalBytesRead != 12) {
         totalBytesRead += ::recvfrom(mSockfd, header+totalBytesRead, 12-totalBytesRead, 0, (struct sockaddr*) client_addr, &clilen);
     }
