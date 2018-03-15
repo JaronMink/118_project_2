@@ -56,12 +56,12 @@ void Sender::set_recipient(struct sockaddr *addr, socklen_t addrlen){
   m_servlen = addrlen;
 }
 
-size_t Sender::get_avaliable_space(){
+uint32_t Sender::get_avaliable_space(){
     if(max_buf_size() < next_byte) {
         std::cerr << "error, next_byte greater than max_buf_size\n";
         exit(1);
     }
-    return (max_buf_size() - next_byte);
+    return ((uint32_t) max_buf_size() - (uint32_t) next_byte);
 }
 
 //go through all packets and resend expired ones

@@ -39,15 +39,81 @@ int JJP::bind(const struct sockaddr *addr, socklen_t addrlen){
 int JJP::listen(int backlog){
     return ::listen(mSockfd, backlog);
 }
+/**
+ thread psuedo code:
+ read_from_UDP_and_translate_to_packet
+ process_packet
+ if_ack
+ notify_sender
+ 
+ get_avaliable_space
+ create_packet_with_len
+ send_packet
+ **/
+
+//read a single packet
+//put packet in buffer
+//process and extract flags
+//ifack_
+//notify sender
+//ifFIN
+//prepare to disconnect
+
+//get_avaliable_space
+//create_packet_with_len
+//send_packet
+void JJP::processing_thread2() {
+    bool receivedFIN = false;
+    uint16_t sequence_number = 0;
+    char *rcvd_packet, *sending_packet, *update_packet;
+    uint16_t ackNum, receiveWindow;
+    int updateTimer = 10; //every 10 loops when rwnd is 0 send update
+    while(!receivedFIN) {
+        
+        size_t rcvd_len = read_single_packet(&rcvd_packet);
+        int isACKorFIN = mReceiver.receive_packet(rcvd_packet, rcvd_len, ackNum, receiveWindow);
+        if (isACKorFIN)
+        {}//mSender.notify_ACK(
+            //todo,
+                //ACK packet received
+                //if FIN disconnect and begin ending
+                //if ACK notify sender
+                //update rwnd
+        
+        uint32_t avaliable_space = mSender.get_avaliable_space();
+        size_t sending_packet_len = mPacker.create_data_packet(&sending_packet, avaliable_space, sequence_number);
+        mSender.send(sending_packet, avaliable_space, sequence_number, false);
+        mSender.resend_expired_packets();
+        
+        //periodically update if receiver is 0
+        if(receiveWindow == 0) {
+            if(updateTimer != 0) {
+                updateTimer--;
+            }
+            else {
+                updateTimer=10;
+                sequence_number++;
+                size_t update_size = mPacker.create_update(&update_packet, sequence_number);
+                mSender.send(update_packet, update_size, sequence_number, false);
+            }
+        }
+        
+    }
+}
+
 void JJP::processing_thread() {
   while (1) {
+      
     int n;
     size_t bytesRead = 0;
     uint16_t ackNum, receiveWindow;
     char buffer[1024];
 
     memset(buffer, 0, 1024);  // reset memory
-
+    
+      
+    
+    
     //size_t available_space = mSender.get_avaliable_space();
     //if (available_space > 0) {
       char* packet[1024];
@@ -74,6 +140,33 @@ void JJP::processing_thread() {
         {}//mSender.notify_ACK(
     }
   }
+}
+
+size_t JJP::read_single_packet(char** packet) {
+    char header[12];
+    struct sockaddr_in* client_addr;
+    socklen_t clilen = sizeof(client_addr);
+    
+    size_t totalBytesRead = ::recvfrom(mSockfd, header, 12, 0, (struct sockaddr*) client_addr, &clilen);
+    while(totalBytesRead != 12) {
+        totalBytesRead += ::recvfrom(mSockfd, header+totalBytesRead, 12-totalBytesRead, 0, (struct sockaddr*) client_addr, &clilen);
+    }
+    uint32_t packet_len = 0;
+    memmove((char*) &packet_len, header, 4);
+    std::cerr << "received packet len:" << packet_len << std::endl;
+    char* received_packet = (char *) malloc(sizeof(char) * packet_len);
+    //move header into packet
+    memmove(received_packet, header, 12);
+    
+    size_t data_len = packet_len - 12;
+    
+    totalBytesRead = ::recvfrom(mSockfd, packet+12, data_len, 0, (struct sockaddr*) client_addr, &clilen);
+    while(totalBytesRead < data_len) {
+        totalBytesRead += ::recvfrom(mSockfd, packet+12+totalBytesRead, data_len-totalBytesRead, 0, (struct sockaddr*) client_addr, &clilen);
+    }
+    
+    *packet = received_packet;
+    return packet_len;
 }
 
 int JJP::accept(struct sockaddr *addr, socklen_t addrlen){

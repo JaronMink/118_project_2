@@ -22,6 +22,8 @@
 class Receiver {
 public:
     Receiver(); //init packet num
+    
+    int read_packet();
     // returns -1 if invalid data, 0 if valid data, 1 if ACK
     int receive_packet(char* packet, size_t packet_len, uint16_t &acknowledgement_num, uint16_t &receiver_window);
     //if data, send ACK (telegraph to JJP that we received data, ie return true)

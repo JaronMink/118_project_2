@@ -23,6 +23,9 @@ Receiver::Receiver() {
     mSockfd = -1;
 }
 
+int read_packet();
+
+
 int Receiver::receive_packet(char* packet, size_t packet_len, uint16_t &acknowledgement_num, uint16_t &receiver_window) {
     //if data, send ACK (telegraph to JJP that we received data, ie return true)
     //if ACK, notify sender that packet has been successfully acked

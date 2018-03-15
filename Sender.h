@@ -21,15 +21,17 @@
 class Sender {
 public:
     Sender();
-    size_t get_avaliable_space();
+    uint32_t get_avaliable_space();
     size_t send(char* packet, size_t packet_len, uint16_t seq_num, bool isResend);
     size_t send_update(char * packet, size_t packet_len); //just to send updates when rwnd is 0
     void resend_expired_packets();
+    
     void set_sockfd(int sockfd) {mSockfd = sockfd;}
+    void set_recipient(struct sockaddr *addr, socklen_t addrlen);
+    
     void update_cwnd(size_t new_wnd) {cwnd = new_wnd;}
     void update_rwnd(size_t new_wnd) {rwnd = new_wnd;}
     void notify_ACK(uint16_t seq_num);
-    void set_recipient(struct sockaddr *addr, socklen_t addrlen);
 //private:
     // size_t send_packet(char* packet, size_t packet_len);
     size_t max_buf_size();
