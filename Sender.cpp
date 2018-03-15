@@ -70,6 +70,8 @@ void Sender::resend_expired_packets() {
         if((!it->isAcked) && packet_has_timed_out(*it)) {
             std::cout <<"resending!\n"<< std::endl;
             send(it->packet, it->packet_len, it->sequence_num, true);
+            time_t now = time(0); //reset timer
+            it->sent_time = now;
         }
     }
 }
