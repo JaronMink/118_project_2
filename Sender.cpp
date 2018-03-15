@@ -35,7 +35,12 @@ void Sender::notify_ACK(uint16_t seq_num) {
             return;
         }
     }
-    
+
+}
+
+void Sender::set_recipient(struct sockaddr *addr, socklen_t addrlen){
+  m_servaddr = addr;
+  m_servlen = addrlen;
 }
 
 size_t Sender::get_avaliable_space(){
@@ -65,8 +70,8 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num){
     PacketObj new_packet_object(packet, packet_len, seq_num);
     packet_buffer.push_back(new_packet_object);
     next_byte += packet_len;
-    
-    
+
+
     //set up alarm for res
     return packet_len;
 }
@@ -83,5 +88,3 @@ size_t Sender::max_buf_size(){
     }
     return minThreshold;
 }
-
-

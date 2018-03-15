@@ -29,6 +29,7 @@ public:
     void update_cwnd(size_t new_wnd) {cwnd = new_wnd;}
     void update_rwnd(size_t new_wnd) {rwnd = new_wnd;}
     void notify_ACK(uint16_t seq_num);
+    void set_recipient(struct sockaddr *addr, socklen_t addrlen);
 private:
     // size_t send_packet(char* packet, size_t packet_len);
     size_t max_buf_size();
@@ -41,14 +42,14 @@ private:
             isAcked = false;
             time(&sent_time);
         }
-        
+
         time_t sent_time;
         uint16_t sequence_num;
         char* packet;
         size_t packet_len;
         bool isAcked;
     };
-    
+
     bool packet_has_timed_out(PacketObj packet_obj) {
         time_t now = time(0);
         if(difftime(now, packet_obj.sent_time)*100 > 500) {
@@ -56,12 +57,12 @@ private:
         }
         return false;
     }
-    
+
     std::list<PacketObj> packet_buffer;
     //size_t max_size;
     int mSockfd;
     const double timeout_ms = 500;
-    
+
     size_t next_byte;
     //char m_buf[5120];
     //char* BUF; // ACK + min(rwnd, cwnd)
@@ -69,6 +70,8 @@ private:
     //char* NEXT; //last sent byte
     size_t cwnd; //5120 bytes usually
     size_t rwnd; //0-5120 bytes
+    struct sockaddr * m_servaddr;
+    socklen_t m_servlen;
 };
 
 #endif /* Sender_hpp */
