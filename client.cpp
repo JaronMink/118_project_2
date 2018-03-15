@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 
     char* server = argv[1];
     portno = atoi(argv[2]);
-    JJP mJJP(AF_INET, SOCK_STREAM, 0);
+    JJP mJJP(AF_INET, SOCK_DGRAM, 0);
 
     memset((char *)&myaddr, 0, sizeof(myaddr));
   	myaddr.sin_family = AF_INET;
@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
   		exit(1);
   	}
 
+    //n = mJJP.write("Hello",strlen("Hello"));  // write to the socket
     mJJP.connect((struct sockaddr*) &remaddr, sizeof(remaddr));
 
     //printf("Please enter the message: ");

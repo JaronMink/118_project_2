@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
     memset(buffer, 0, 1024);  // reset memory
 
     //read client's message
+    while(1);
+
     while((n = mJJP.read(buffer, 1023)) == 0);
     if (n < 0) error("ERROR reading from socket");
     printf("Received Message:\n%s\n", buffer);
