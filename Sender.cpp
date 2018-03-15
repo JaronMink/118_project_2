@@ -65,7 +65,7 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num){
         return 0;
     }
     //write to socket
-    ::write(mSockfd, packet, packet_len);
+    ::sendto(mSockfd, packet, packet_len, 0, m_servaddr, sizeof(m_servaddr));
     //store in object
     PacketObj new_packet_object(packet, packet_len, seq_num);
     packet_buffer.push_back(new_packet_object);

@@ -36,7 +36,7 @@ size_t Packer::create_data_packet(char** buf, uint32_t len, uint16_t sequence_nu
     if(dataLen <= 0 || dataLen > (1024 - headerLen)) { //if we don't have enough space to put any data, or packet is too big return a nullptr
         return 0;
     }
-    
+
     char* body = (char*)malloc(sizeof(char)*dataLen);
     bufSS.read(body, dataLen);
     size_t bytesRead = bufSS.gcount();
@@ -46,9 +46,9 @@ size_t Packer::create_data_packet(char** buf, uint32_t len, uint16_t sequence_nu
         std::cout << "Packer: No bytes to read from packer\n";
         return 0;
     }
-    
+
     char* header = create_header(totalPacketSize, sequence_number, (uint16_t) 0, (uint16_t) 0, false, false, false);
-    
+
     char* packet = (char*) malloc(sizeof(char)*totalPacketSize);
     memmove(packet, header, sizeof(char)*12);
     memmove(packet + 12, body, sizeof(char)*bytesRead);
@@ -63,7 +63,7 @@ size_t Packer::create_data_packet(char** buf, uint32_t len, uint16_t sequence_nu
  ***/
 char* Packer::create_header(uint32_t packet_length, uint16_t sequence_number, uint16_t acknowledgement_num, uint16_t receiver_window, bool isACK, bool isFIN, bool isSYN){ //size_t sequenceNum, bool isACK, size_t ackNum, bool isFIN, size_t rcwn, size_t receiverWindow, size_t totalSize) {
     char* header = (char *) malloc(sizeof(char)*12); //96 bit header
-    
+
     int16_t flags = 0;
     if(isACK){
         flags = flags | (0x1<<15); //flag is 15th bit
@@ -75,13 +75,13 @@ char* Packer::create_header(uint32_t packet_length, uint16_t sequence_number, ui
         flags = flags | (0x1<<13); //flag is 13th bit
     }
     //add contents to packet
-    
+
     memmove(header, (char*)&packet_length, 4);
     memmove(header+4,(char*)&sequence_number, 2);
     memmove(header+6,(char*)&acknowledgement_num, 2);
     memmove(header+8,(char*)&receiver_window, 2);
     memmove(header+10,(char*)&flags, 2);
-    
+
     return header;
 }
 
