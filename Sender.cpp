@@ -17,6 +17,9 @@
 #include <thread>
 #include "Sender.h"
 
+//: - TODO add packet to queue if its not an ack, if an ack, don't add (ie add true for parameter)
+
+
 /***
  Public
  ***/
@@ -76,7 +79,7 @@ void Sender::resend_expired_packets() {
     }
 }
 
-size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool isResend){
+size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dontStore){
     if(((long)get_avaliable_space() - (long) packet_len) < 0) { //if we don't have enough space to hold packet, do nothing
         std::cerr << "Not enough space!"<< std::endl;
         return 0;
@@ -87,7 +90,7 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool isRe
     sendto(mSockfd, packet, packet_len, 0, m_servaddr, m_servlen);
     std::cout << "Sending packet " << seq_num << " " << cwnd << std::endl;
    
-    if(!isResend) {
+    if(!dontStore) {
         //store in object
         PacketObj new_packet_object(packet, packet_len, seq_num);
         packet_buffer.push_back(new_packet_object);

@@ -67,7 +67,7 @@ int JJP::listen(int backlog){
 //create_packet_with_len
 //send_packet
 void JJP::processing_thread2() {
-    bool receivedFIN = false;
+    bool receivedFIN = false, receivedACK = false, receivedSYN = false;
     uint16_t sequence_number = 0;
     char *rcvd_packet, *sending_packet, *update_packet;
     uint16_t ackNum, receiveWindow;
@@ -75,11 +75,19 @@ void JJP::processing_thread2() {
     while(!receivedFIN) {
 
         size_t rcvd_len = read_single_packet(&rcvd_packet);
-        int isACKorFIN = mReceiver.receive_packet(rcvd_packet, rcvd_len, ackNum, receiveWindow);
-        if (isACKorFIN)
+        if(mReceiver.receive_packet(rcvd_packet, rcvd_len, ackNum, receiveWindow, receivedACK, receivedFIN, receivedSYN) < 0)
+            perror("error receiving packet");
+        //if Data, send ack with dontStore as true
+        //if FIN disconnect and begin ending
+        //if ACK notify sender
+        //update rwnd
+        
+        
+        //mReceiver.receive_packet(rcvd_packet, rcvd_len, ackNum, receiveWindow,) < 0)
+        //if (isACKorFIN)
         {}//mSender.notify_ACK(
             //todo,
-                //ACK packet received
+                //if Data, send ack with dontStore as true
                 //if FIN disconnect and begin ending
                 //if ACK notify sender
                 //update rwnd
@@ -141,13 +149,14 @@ void JJP::processing_thread() {
     //printf("Received message in thread.\n");
     if (bytesRead > 0) {
       std::lock(buf_mutex, buf_mutex2);
-      int isACKorFIN = mReceiver.receive_packet(buffer, bytesRead, ackNum, receiveWindow);
+      //int isACKorFIN = mReceiver.receive_packet(buffer, bytesRead, ackNum, receiveWindow);
       buf_mutex.unlock();
       buf_mutex2.unlock();
+
       printf("Receiving packet of byte length %d\n", bytesRead);
 
-      if (isACKorFIN)
-        {}//mSender.notify_ACK(
+      //if (isACKorFIN)
+        //{}//mSender.notify_ACK(
     }
   }
 }

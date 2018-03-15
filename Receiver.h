@@ -25,7 +25,7 @@ public:
     
     int read_packet();
     // returns -1 if invalid data, 0 if valid data, 1 if ACK
-    int receive_packet(char* packet, size_t packet_len, uint16_t &acknowledgement_num, uint16_t &receiver_window);
+    int receive_packet(char* packet, size_t packet_len, uint16_t &acknowledgement_num, uint16_t &receiver_window, bool &isAck, bool &isFin, bool &isSyn);
     //if data, send ACK (telegraph to JJP that we received data, ie return true)
     //if ACK, notify sender that packet has been successfully acked
     //if data

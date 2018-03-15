@@ -17,6 +17,8 @@
 #include <thread>
 #include "Receiver.h"
 
+
+
 Receiver::Receiver() {
     expected_packet_num = 0;
     used_space = 0;
@@ -26,14 +28,14 @@ Receiver::Receiver() {
 int read_packet();
 
 
-int Receiver::receive_packet(char* packet, size_t packet_len, uint16_t &acknowledgement_num, uint16_t &receiver_window) {
+int Receiver::receive_packet(char* packet, size_t packet_len, uint16_t &acknowledgement_num, uint16_t &receiver_window, bool &isACK, bool &isFIN, bool &isSYN) {
     //if data, send ACK (telegraph to JJP that we received data, ie return true)
     //if ACK, notify sender that packet has been successfully acked
     //if data
     //put into temporary buffer (update avaliable space)
     uint32_t packet_length;
     uint16_t sequence_number;
-    bool isACK, isFIN, isSYN;
+    //bool isACK, isFIN, isSYN;
     int16_t flags = 0;
     
     char* header = packet;
@@ -48,10 +50,10 @@ int Receiver::receive_packet(char* packet, size_t packet_len, uint16_t &acknowle
     isFIN = flags & (0x1<<14);
     isSYN = flags & (0x1<<13);
     
-    int ret_flag = 0;
+    //int ret_flag = 0;
     
-    if (isACK || isFIN)
-        ret_flag = 1;
+    //if (isACK || isFIN)
+     //   ret_flag = 1;
     
     packetPair pPair(sequence_number, packet, packet_len);
     
@@ -69,7 +71,7 @@ int Receiver::receive_packet(char* packet, size_t packet_len, uint16_t &acknowle
         expected_packet_num = (expected_packet_num + currPair.packet_len) % 30720;
     }
     
-    return ret_flag;
+    return 0; //return -1 before if anything goes wrong
 }
 
 size_t Receiver::read(void *buf, size_t nbytes){

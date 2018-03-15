@@ -23,10 +23,10 @@ public:
     Packer();
     //store data to be send
     size_t store(const char* str, size_t len);
-    //create a packet of total size len, sets a pointer buf to packet and returns size of it
+    //create a packet of total size len, sets a pointer buf to pa cket and returns size of it
     size_t create_data_packet(char** buf, uint32_t len, uint16_t sequence_number);
     size_t create_FIN(char** packet, uint16_t seq_num);
-    size_t create_ACK(char** packet, uint16_t seq_num);
+    size_t create_ACK(char** packet, uint16_t seq_num, uint16_t ack_num);
     size_t create_SYN(char** packet, uint16_t seq_num);
     size_t create_update(char** packet, uint16_t seq_num);
     void set_rwnd(size_t new_rwnd) {rwnd=new_rwnd;}
