@@ -118,6 +118,8 @@ void JJP::processing_thread2() {
        }
 
         uint32_t available_space = mSender.get_avaliable_space();
+        mSender.resend_expired_packets();
+
         if (available_space > 1024)
           available_space = 1024;
         size_t sending_packet_len = mPacker.create_data_packet(&sending_packet, available_space, sequence_number);
@@ -126,7 +128,7 @@ void JJP::processing_thread2() {
           mSender.send(sending_packet, available_space, sequence_number, false);
           sequence_number = (sequence_number + sending_packet_len) % 30720;
         }
-        mSender.resend_expired_packets();
+
 
         /*
 
@@ -209,24 +211,35 @@ size_t JJP::read_single_packet(char** packet) {
         *packet = NULL;
         return 0;
     }
+    //std::cout << totalBytesRead << std::endl;
+
     while(totalBytesRead != 12) {
-        totalBytesRead += ::recvfrom(mSockfd, header+totalBytesRead, 12-totalBytesRead, 0, (struct sockaddr*) &client_addr, &clilen);
+        int attemptedBytesRead = ::recvfrom(mSockfd, header+totalBytesRead, 12-totalBytesRead, MSG_PEEK, (struct sockaddr*) &client_addr, &clilen);
+        if (attemptedBytesRead == -1)
+          continue;
+        totalBytesRead += attemptedBytesRead;
+        //std::cout << totalBytesRead << std::endl;
     }
     uint32_t packet_len = 0;
     memmove((char*) &packet_len, header, 4);
     //std::cerr << "received packet len:" << packet_len << std::endl;
     char* received_packet = (char *) malloc(sizeof(char) * packet_len);
     //move header into packet
-    memmove(received_packet, header, 12);
+    //memmove(received_packet, header, 12);
 
-    size_t data_len = packet_len - 12;
-
-    totalBytesRead = ::recvfrom(mSockfd, packet+12, data_len, 0, (struct sockaddr*) &client_addr, &clilen);
-    while(totalBytesRead < data_len) {
-        totalBytesRead += ::recvfrom(mSockfd, packet+12+totalBytesRead, data_len-totalBytesRead, 0, (struct sockaddr*) &client_addr, &clilen);
+    totalBytesRead = 0;//::recvfrom(mSockfd, received_packet+12, data_len, 0, (struct sockaddr*) &client_addr, &clilen);
+    while(totalBytesRead < packet_len) {
+        int attemptedBytesRead = ::recvfrom(mSockfd, received_packet + totalBytesRead, packet_len-totalBytesRead, 0, (struct sockaddr*) &client_addr, &clilen);
+        if (attemptedBytesRead == -1)
+          continue;
+        totalBytesRead += attemptedBytesRead;
+        //std::cout << totalBytesRead << std::endl;
     }
 
+    //memmove(received_packet + 12, body, data_len);
+
     *packet = received_packet;
+
     mSender.set_recipient((struct sockaddr*) &client_addr, (socklen_t) clilen);
 
     return packet_len;

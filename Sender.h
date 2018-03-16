@@ -25,10 +25,10 @@ public:
     size_t send(char* packet, size_t packet_len, uint16_t seq_num, bool isResend);
     size_t send_update(char * packet, size_t packet_len); //just to send updates when rwnd is 0
     void resend_expired_packets();
-    
+
     void set_sockfd(int sockfd) {mSockfd = sockfd;}
     void set_recipient(struct sockaddr *addr, socklen_t addrlen);
-    
+
     void update_own_cwnd(size_t new_wnd) {cwnd = new_wnd;}
     void update_other_rwnd(size_t new_wnd) {rwnd = new_wnd;}
     void notify_ACK(uint16_t seq_num);
@@ -55,6 +55,7 @@ public:
     bool packet_has_timed_out(PacketObj packet_obj) {
         time_t now = time(0);
         if(difftime(now, packet_obj.sent_time) > 500/1000.0) {
+            std::cout<< now << " " << packet_obj.sent_time  << " " <<packet_obj.sequence_num << " has timed ou t" << std::endl;
             return true;
         }
         return false;

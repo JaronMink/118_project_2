@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
   	}
 
 
-    int requestedFD = open("test.txt", O_RDONLY);
+    /*int requestedFD = open("test.txt", O_RDONLY);
     if( requestedFD >= 0) {
         char* fileContent = NULL;
         int fileLen = -1;
@@ -95,15 +95,14 @@ int main(int argc, char *argv[])
         readFileContent(requestedFD, &fileContent, &fileLen);
 
         mJJP.write(fileContent, fileLen);
-      }
+      }*/
 
-      /*
+
     n = mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
     mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
     mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
     mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
     mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-    */
     mJJP.connect((struct sockaddr*) &remaddr, sizeof(remaddr));
 
     //printf("Please enter the message: ");
