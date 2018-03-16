@@ -31,6 +31,8 @@ public:
 
     void update_own_cwnd(size_t new_wnd) {cwnd = new_wnd;}
     void update_other_rwnd(size_t new_wnd) {rwnd = new_wnd;}
+    size_t get_cwnd() {return cwnd;}
+
     void notify_ACK(uint16_t seq_num);
 //private:
     // size_t send_packet(char* packet, size_t packet_len);
@@ -55,7 +57,7 @@ public:
     bool packet_has_timed_out(PacketObj packet_obj) {
         time_t now = time(0);
         if(difftime(now, packet_obj.sent_time)*1000.0 > 500.0) {
-            std::cout<< now << " " << packet_obj.sent_time  << " " <<packet_obj.sequence_num << " has timed ou t" << std::endl;
+            //std::cout<< now << " " << packet_obj.sent_time  << " " <<packet_obj.sequence_num << " has timed ou t" << std::endl;
             return true;
         }
         return false;

@@ -71,7 +71,7 @@ void JJP::SYN_client() {
     sequence_number = rand() % 30720;
     size_t syn_packet_len = mPacker.create_SYN(&syn_packet, sequence_number);
     mSender.send(syn_packet, syn_packet_len, sequence_number, false);
-    std::cout << "sending SYN with sequence number " << sequence_number << std::endl;
+    std::cout << "Sending packet " << sequence_number << " " << mSender.get_cwnd() << " SYN" << std::endl;
     sequence_number = (sequence_number + syn_packet_len) % 30720;
 
     //wait for SYNACK and send ack once received
@@ -90,7 +90,7 @@ void JJP::SYN_client() {
 
         //ok we got syn ack, lets ack and begin processing
         mSender.notify_ACK(ackNum);
-        std::cout << "received SYNack with sequence number " << receivedSequenceNumber << std::endl;
+        //std::cout << "received SYNack with sequence number " << receivedSequenceNumber << std::endl;
         mReceiver.set_seq_num(receivedSequenceNumber + rcvd_len);
 
         mSender.update_other_rwnd(other_receive_window); //update sender with rwnd
@@ -99,7 +99,7 @@ void JJP::SYN_client() {
         char* ACKPacket;
         size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
         mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
-        std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
+        //std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
         sequence_number = (sequence_number + ACKPacket_len) % 30720;
 
         return;
@@ -123,18 +123,19 @@ void JJP::SYN_server() {
         if(!receivedSYN) //wait for SYN!!!
             continue;
         //ok we got syn, now lets send a SYNACK
-        std::cout << "received SYN with sequence number " << receivedSequenceNumber << std::endl;
+        //std::cout << "received SYN with sequence number " << receivedSequenceNumber << std::endl;
         mReceiver.set_seq_num(receivedSequenceNumber + rcvd_len);
 
         mSender.update_other_rwnd(other_receive_window); //update sender with rwnd
         mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
 
         char* syn_ack_packet = NULL;
-        //srand(time(NULL));
+        srand(time(NULL)-100);
         sequence_number = rand() % 30720;
         size_t syn_ack_packet_len = mPacker.create_SYNACK(&syn_ack_packet, sequence_number, receivedSequenceNumber);
         mSender.send(syn_ack_packet, syn_ack_packet_len, sequence_number, false);
-        std::cout << "sending SYNACK with sequence number " << sequence_number << std::endl;
+        std::cout << "Sending packet " << sequence_number << " " << mSender.get_cwnd() << " SYN" << std::endl;
+        //std::cout << "sending SYNACK with sequence number " << sequence_number << std::endl;
         sequence_number = (sequence_number + syn_ack_packet_len) % 30720;
 
         return;
@@ -185,12 +186,12 @@ void JJP::processing_thread() {
           char* ACKPacket;
           size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
           mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
-          std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
+          //std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
           sequence_number = (sequence_number + ACKPacket_len) % 30720;
         }
 
         if (receivedACK) {
-          std::cout << "Received ACK " << ackNum << std::endl;
+          std::cout << "Receiving packet " << ackNum << std::endl;
           mSender.notify_ACK(ackNum);
        }
 
@@ -203,6 +204,7 @@ void JJP::processing_thread() {
         if (sending_packet_len > 0) {
           //printf("Packet length: %d\n", sending_packet_len);
           mSender.send(sending_packet, available_space, sequence_number, false);
+          std::cout << "Sending packet " << sequence_number << " " << mSender.get_cwnd() << std::endl;
           sequence_number = (sequence_number + sending_packet_len) % 30720;
         }
 

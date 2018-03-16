@@ -38,7 +38,7 @@ void Sender::notify_ACK(uint16_t seq_num) {
             break;
         }
     }
-    std::cerr << "packets before:" << packet_buffer.size() << std::endl;
+    //std::cerr << "packets before:" << packet_buffer.size() << std::endl;
     //move window up
     bool hasMovedWindow = true;
     for(std::list<PacketObj>::iterator it = packet_buffer.begin(); hasMovedWindow;) {
@@ -46,13 +46,13 @@ void Sender::notify_ACK(uint16_t seq_num) {
             next_byte-=it->packet_len;
             free(it->packet);
             it = packet_buffer.erase(it);
-            std::cerr << "moved window once\n";
+            //std::cerr << "moved window once\n";
             hasMovedWindow = true;
         } else {
             hasMovedWindow = false;
         }
     }
-    std::cerr << "packets after:" << packet_buffer.size() << std::endl << std::endl;
+    //std::cerr << "packets after:" << packet_buffer.size() << std::endl << std::endl;
 }
 
 void Sender::set_recipient(struct sockaddr *addr, socklen_t addrlen){
@@ -72,7 +72,7 @@ uint32_t Sender::get_avaliable_space(){
 void Sender::resend_expired_packets() {
     for(std::list<PacketObj>::iterator it = packet_buffer.begin(); it != packet_buffer.end(); it++) {
         if((!it->isAcked) && packet_has_timed_out(*it)) {
-            std::cout <<"resending!\n"<< std::endl;
+            std::cout << "Sending packet " << it->sequence_num << " " << cwnd << " Retransmission" << std::endl;
             send(it->packet, it->packet_len, it->sequence_num, true);
             time_t now = time(0); //reset timer
             it->sent_time = now;
@@ -86,7 +86,7 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
         return 0;
     }
 
-    if (true )
+    if (true)
       {
 
 
@@ -96,7 +96,7 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
     if (sendto(mSockfd, packet, packet_len, 0, m_servaddr, m_servlen) == -1)
       perror("sendto: ");
     }
-    std::cout << "Sending packet " << seq_num << " " << cwnd << std::endl;
+    //std::cout << "Sending packet " << seq_num << " " << cwnd; //<< std::endl;
 
     if(!dontStore) {
         //store in object
@@ -104,7 +104,6 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
         packet_buffer.push_back(new_packet_object);
         next_byte += packet_len;
     }
-
     return packet_len;
 }
 
