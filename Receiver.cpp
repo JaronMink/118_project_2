@@ -67,6 +67,7 @@ int Receiver::receive_packet(char* packet, size_t packet_len, uint16_t& sequence
         storage_queue.pop();
         used_space -= currPair.packet_len;
         bufSS.write(currPair.packet+12, currPair.packet_len-12);
+        bufLen += currPair.packet_len - 12;
         free(currPair.packet);
         expected_packet_num = (expected_packet_num + currPair.packet_len) % 30720;
     }
@@ -76,6 +77,11 @@ int Receiver::receive_packet(char* packet, size_t packet_len, uint16_t& sequence
 
 size_t Receiver::read(void *buf, size_t nbytes){
     bufSS.read((char*)buf, nbytes);
+    bufLen -= bufSS.gcount();
+    if (bufLen == 0){
+      bufSS.str("");
+      bufSS.clear();
+    }
     return bufSS.gcount();
 }
 

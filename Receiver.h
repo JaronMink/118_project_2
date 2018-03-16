@@ -18,6 +18,7 @@
 #include <sstream>
 #include <queue>
 #include <time.h>
+#include <iostream>
 
 class Receiver {
 public:
@@ -33,6 +34,13 @@ public:
 
     size_t read(void *buf, size_t nbytes); //read from stored data
     //read from sstring, either up to nbytes or x bytes. return x bytes.
+
+    int get_buf_size() {
+      bufSS.seekp(0, std::ios::end);
+      return bufSS.tellp();
+    }
+
+
     size_t get_avaliable_space();
     //(5120) total space in bufer - sum of packet size in temp storage
     void set_sockfd(int sockfd) {mSockfd = sockfd;}
@@ -60,6 +68,7 @@ private:
     int mSockfd;
     uint16_t expected_packet_num;
     std::stringstream bufSS;
+    int bufLen = 0;
     std::priority_queue<packetPair> storage_queue;
     size_t used_space;
 };

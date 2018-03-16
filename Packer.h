@@ -30,14 +30,14 @@ public:
     size_t create_SYN(char** packet, uint16_t seq_num);
     size_t create_FINACK(char** packet, uint16_t seq_num, uint16_t ack_num);
     size_t create_SYNACK(char** packet, uint16_t seq_num, uint16_t ack_num);
+    size_t size();
 
-    
+
     size_t create_update(char** packet, uint16_t seq_num);
     void update_own_rwnd(size_t new_rwnd) {rwnd=new_rwnd;}
 private:
     //given x bytes of data, add a header to it
     char* create_header(uint32_t packet_length, uint16_t sequence_number, uint16_t acknowledgement_num, uint16_t receiver_window, bool isACK, bool isFIN, bool isSYN);
-    size_t size();
     size_t rwnd;
     std::stringstream bufSS;
     size_t bufLen;

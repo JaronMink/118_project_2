@@ -266,7 +266,7 @@ void JJP::SYN_server() {
 //get_avaliable_space
 //create_packet_with_len
 //send_packet
-void JJP::processing_thread() {
+void JJP::processing_thread(bool isClient) {
     bool receivedFIN = false, receivedACK = false, receivedSYN = false;
     char *rcvd_packet, *sending_packet, *update_packet;
 
@@ -302,16 +302,18 @@ void JJP::processing_thread() {
         if (receivedACK) {
           std::cout << "Receiving packet " << receivedSequenceNumber << std::endl;
           mSender.notify_ACK(ackNum);
-
-          //if (receivedFIN) {
-          //  FIN_server(ackNum);
-          //}
        }
-       //else if (mPacker.) {
-      //   FIN_client();
-       //}
+       /*else if (mPacker.size() == 0 && isClient) {
+         FIN_client();
+         return;
+       }
+       if (receivedFIN && !isClient) {
+         FIN_server(ackNum);
+           return;
+       }*/
 
         uint32_t available_space = mSender.get_avaliable_space();
+        //std::cout << available_space << " " << mPacker.size() << std::endl;
         mSender.resend_expired_packets();
 
         if (available_space > 1024)
@@ -385,7 +387,7 @@ int JJP::accept(struct sockaddr *addr, socklen_t addrlen){
 
   SYN_server();
 
-  std::thread process(&JJP::processing_thread, this);
+  std::thread process(&JJP::processing_thread, this, false);
   process.detach();
 
   return 0;
@@ -396,7 +398,7 @@ int JJP::connect(struct sockaddr *addr, socklen_t addrlen){
 
   SYN_client();
 
-  std::thread process(&JJP::processing_thread, this);
+  std::thread process(&JJP::processing_thread, this, true);
   process.detach();
 
   return 0;

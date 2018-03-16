@@ -37,7 +37,7 @@ public:
     ssize_t read(void *buf, size_t nbytes);
 
 private:
-    void processing_thread();
+    void processing_thread(bool isClient);
     void SYN_server();
     void SYN_client();
     void FIN_server(int receievedSequenceNumber);

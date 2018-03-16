@@ -98,17 +98,27 @@ int main(int argc, char *argv[])
       }*/
 
 
-      n = mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+      /*n = mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
       mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
       mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
       mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
       mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+      */
+    mJJP.write("test.txt",strlen("test.txt"));
 
     mJJP.connect((struct sockaddr*) &remaddr, sizeof(remaddr));
 
     //printf("Please enter the message: ");
     //memset(buffer,0, 256);
     //fgets(buffer,255,stdin);  // read message
+
+    while(true) {
+      while (mJJP.get_buf_size() == 0) usleep(10);
+
+      while((n = mJJP.read(buffer, 1023)) == 0) ;
+      if (n < 0) error("ERROR reading from socket");
+      printf("Received Message:\n%s\n", buffer);
+    }
 
     //n = mJJP.write("Hello",strlen("Hello"));  // write to the socket
     if (n < 0)

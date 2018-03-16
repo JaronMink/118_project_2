@@ -40,8 +40,13 @@ size_t Packer::create_data_packet(char** buf, uint32_t len, uint16_t sequence_nu
 
     char* body = (char*)malloc(sizeof(char)*dataLen);
     bufSS.read(body, dataLen);
+    //std::cout << bufSS.good() << std::endl;
     size_t bytesRead = bufSS.gcount();
     bufLen -= bytesRead;
+    if (bufLen == 0){
+      bufSS.str("");
+      bufSS.clear();
+    }
     uint32_t totalPacketSize = bytesRead + headerLen;
     if(bytesRead <= 0) {
         //std::cout << "Packer: No bytes to read from packer\n";
