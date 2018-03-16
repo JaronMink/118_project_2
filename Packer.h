@@ -28,6 +28,10 @@ public:
     size_t create_FIN(char** packet, uint16_t seq_num);
     size_t create_ACK(char** packet, uint16_t seq_num, uint16_t ack_num);
     size_t create_SYN(char** packet, uint16_t seq_num);
+    size_t create_FINACK(char** packet, uint16_t seq_num, uint16_t ack_num);
+    size_t create_SYNACK(char** packet, uint16_t seq_num, uint16_t ack_num);
+
+    
     size_t create_update(char** packet, uint16_t seq_num);
     void update_own_rwnd(size_t new_rwnd) {rwnd=new_rwnd;}
 private:

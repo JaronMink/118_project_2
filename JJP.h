@@ -37,11 +37,18 @@ public:
 private:
     void processing_thread();
     void processing_thread2();
+    void SYN_server();
+    void SYN_client();
+    void FIN_server();
+    void FIN_client();
+
 
     size_t read_single_packet(char** packet);
     Packer mPacker;
     Sender mSender;
     Receiver mReceiver;
+    uint16_t other_receive_window;
+    uint16_t sequence_number;
     int mSockfd;
     struct sockaddr_in client_addr;
     socklen_t clilen;

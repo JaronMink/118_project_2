@@ -61,6 +61,80 @@ int JJP::listen(int backlog){
  send_packet
  **/
 
+void JJP::SYN_client() {
+    bool receivedFIN = false, receivedACK = false, receivedSYN = false;
+    char *rcvd_packet, *syn_packet;
+    uint16_t ackNum, receivedSequenceNumber = 0;
+    
+    //send SYN
+    sequence_number = rand() % 30720;
+    size_t syn_packet_len = mPacker.create_SYN(&syn_packet, sequence_number);
+    mSender.send(syn_packet, syn_packet_len, sequence_number, false);
+    std::cout << "sending SYN with sequence number " << sequence_number << std::endl;
+    sequence_number = (sequence_number + syn_packet_len) % 30720;
+    
+    //wait for SYNACK and send ack once received
+
+    while(true) {
+        receivedACK = receivedFIN = receivedSYN = false;
+        
+        long rcvd_len = read_single_packet(&rcvd_packet);
+        if (rcvd_len > 0) {
+            if((mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, other_receive_window, receivedACK, receivedFIN, receivedSYN)) < 0)
+                perror("error receiving packet");
+        }
+        if(!(receivedSYN && receivedACK)) //wait for SYNACK!!!
+            continue;
+        
+        //ok we got syn ack, lets ack and begin processing
+        std::cout << "received SYNack with sequence number " << receivedSequenceNumber << std::endl;
+        mReceiver.set_seq_num(receivedSequenceNumber + rcvd_len);
+        
+        mSender.update_other_rwnd(other_receive_window); //update sender with rwnd
+        mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
+        
+        char* ACKPacket;
+        size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
+        sequence_number = (sequence_number + ACKPacket_len) % 30720;
+        mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
+        std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
+    }
+}
+
+void JJP::SYN_server() {
+    bool receivedFIN = false, receivedACK = false, receivedSYN = false;
+    char *rcvd_packet;
+    uint16_t ackNum, receivedSequenceNumber = 0;
+     
+    while(true) {
+        receivedACK = receivedFIN = receivedSYN = false;
+        
+        long rcvd_len = read_single_packet(&rcvd_packet);
+        if (rcvd_len > 0) {
+            if((mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, other_receive_window, receivedACK, receivedFIN, receivedSYN)) < 0)
+                perror("error receiving packet");
+        }
+        if(!receivedSYN) //wait for SYN!!!
+            continue;
+        //ok we got syn, now lets send a SYNACK
+        std::cout << "received SYN with sequence number " << receivedSequenceNumber << std::endl;
+        mReceiver.set_seq_num(receivedSequenceNumber + rcvd_len);
+        
+        mSender.update_other_rwnd(other_receive_window); //update sender with rwnd
+        mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
+        
+        char* syn_ack_packet = NULL;
+        sequence_number = rand() % 30720;
+        size_t syn_ack_packet_len = mPacker.create_SYNACK(&syn_ack_packet, sequence_number, receivedSequenceNumber);
+        sequence_number = (sequence_number + syn_ack_packet_len) % 30720;
+        mSender.send(syn_ack_packet, syn_ack_packet_len, sequence_number, false);
+        std::cout << "sending SYNACK with sequence number " << sequence_number << std::endl;
+    }
+}
+
+
+
+
 //read a single packet
 //put packet in buffer
 //process and extract flags
@@ -74,24 +148,17 @@ int JJP::listen(int backlog){
 //send_packet
 void JJP::processing_thread2() {
     bool receivedFIN = false, receivedACK = false, receivedSYN = false;
-    uint16_t sequence_number = 0;
     char *rcvd_packet, *sending_packet, *update_packet;
     uint16_t ackNum, receivedSequenceNumber;
-    uint16_t receiveWindow = 5120;
-    int isACKorFIN;
     //int updateTimer = 10; //every 10 loops when rwnd is 0 send update
-    int x = 0;
     while(true) {
-        //if (x % 3 == 0)
-        //  sleep(5);
-        x++;
         receivedACK = receivedFIN = receivedSYN = false;
 
         std::lock(buf_mutex, buf_mutex2);
         long rcvd_len = read_single_packet(&rcvd_packet);
         if (rcvd_len > 0) {
           //printf("Receiving packet of byte length %d\n", rcvd_len);
-          if((isACKorFIN = mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, receiveWindow, receivedACK, receivedFIN, receivedSYN)) < 0)
+          if((mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, other_receive_window, receivedACK, receivedFIN, receivedSYN)) < 0)
               perror("error receiving packet");
         }
 
@@ -101,7 +168,7 @@ void JJP::processing_thread2() {
                 //if ACK notify sender -done
                 //update rwnd -done
 
-        mSender.update_other_rwnd(receiveWindow); //update sender with rwnd
+        mSender.update_other_rwnd(other_receive_window); //update sender with rwnd
         mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
 
         if ((rcvd_len > 12) || receivedFIN || receivedSYN) {

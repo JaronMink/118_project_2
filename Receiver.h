@@ -36,6 +36,7 @@ public:
     size_t get_avaliable_space();
     //(5120) total space in bufer - sum of packet size in temp storage
     void set_sockfd(int sockfd) {mSockfd = sockfd;}
+    void set_seq_num(uint16_t new_seq_num) {expected_packet_num = new_seq_num;}
 
 private:
     //update_temporary_storage //transfer valid data from temp storage to sstream
@@ -52,7 +53,7 @@ private:
         }
 
         bool operator<(const struct packetPair& other) const
-        {  return seq_num < other.seq_num; }
+        {return seq_num < other.seq_num;}
     };
 
     //next expected packet, init to 0

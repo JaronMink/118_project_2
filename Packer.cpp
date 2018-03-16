@@ -97,6 +97,14 @@ size_t Packer::create_ACK(char** packet, uint16_t seq_num, uint16_t ack_num) {
     *packet = create_header(sizeof(char)*12, seq_num, ack_num, rwnd, true, false, false);
     return (sizeof(char)*12);
 }
+size_t Packer::create_SYNACK(char** packet, uint16_t seq_num, uint16_t ack_num) {
+    *packet = create_header(sizeof(char)*12, seq_num, ack_num, rwnd, true, false, true);
+    return (sizeof(char)*12);
+}
+size_t Packer::create_FINACK(char** packet, uint16_t seq_num, uint16_t ack_num) {
+    *packet = create_header(sizeof(char)*12, seq_num, ack_num, rwnd, true, true, true);
+    return (sizeof(char)*12);
+}
 size_t Packer::create_SYN(char** packet, uint16_t seq_num) {
     *packet = create_header(sizeof(char)*12, seq_num, (uint16_t) 0, rwnd, false, false, true);
     return (sizeof(char)*12);
