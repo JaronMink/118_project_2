@@ -79,14 +79,14 @@ void Sender::resend_expired_packets() {
         }
     }
 }
-int x=0;
+
 size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dontStore){
     if(((long)get_avaliable_space() - (long) packet_len) < 0) { //if we don't have enough space to hold packet, do nothing
         std::cerr << "Not enough space!"<< std::endl;
         return 0;
     }
 
-    if (x!=0 )
+    if (true )
       {
 
 
@@ -104,7 +104,6 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
         packet_buffer.push_back(new_packet_object);
         next_byte += packet_len;
     }
-    x++;
 
     return packet_len;
 }
