@@ -88,23 +88,6 @@ int main(int argc, char *argv[])
   		exit(1);
   	}
 
-
-    /*int requestedFD = open("test.txt", O_RDONLY);
-    if( requestedFD >= 0) {
-        char* fileContent = NULL;
-        int fileLen = -1;
-        readFileContent(requestedFD, &fileContent, &fileLen);
-
-        mJJP.write(fileContent, fileLen);
-      }*/
-
-
-      /*n = mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-      mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-      mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-      mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-      mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-      */
     mJJP.write(filename,strlen(filename));
 
     mJJP.connect((struct sockaddr*) &remaddr, sizeof(remaddr));
@@ -113,12 +96,17 @@ int main(int argc, char *argv[])
     //memset(buffer,0, 256);
     //fgets(buffer,255,stdin);  // read message
 
+    int file_fd = open("received.data",O_WRONLY);
+    if (file_fd < 0) {
+      perror("fopen");
+    }
     while(true) {
       while (mJJP.get_buf_size() == 0) usleep(10);
 
       while((n = mJJP.read(buffer, 1023)) == 0) ;
       if (n < 0) error("ERROR reading from socket");
-      printf("Received Message:\n%s\n", buffer);
+      //printf("Received Message:\n%s\n", buffer);
+      write(file_fd, buffer, n);
     }
 
     //n = mJJP.write("Hello",strlen("Hello"));  // write to the socket

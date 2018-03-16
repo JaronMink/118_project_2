@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
       while((n = mJJP.read(buffer, 1023)) == 0) ;
       if (n < 0) error("ERROR reading from socket");
-      printf("Received Message:\n%s\n", buffer);
+      //printf("Received Message:\n%s\n", buffer);
 
       int requestedFD = open(buffer, O_RDONLY);
       if( requestedFD >= 0) {
