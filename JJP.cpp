@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <time.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -60,6 +61,111 @@ int JJP::listen(int backlog){
  create_packet_with_len
  send_packet
  **/
+
+void JJP::FIN_client() {
+    
+    bool receivedFIN = false, receivedACK = false, receivedSYN = false;
+    char *rcvd_packet, *fin_packet;
+    uint16_t ackNum, receivedSequenceNumber = 0;
+    
+    //send FIN
+    size_t fin_packet_len = mPacker.create_FIN(&fin_packet, sequence_number);
+    mSender.send(fin_packet, fin_packet_len, sequence_number, false);
+    std::cout << "sending FIN with sequence number " << sequence_number << std::endl;
+    sequence_number = (sequence_number + fin_packet_len) % 30720;
+    
+    //wait for FINACK and send ack once received
+    
+    while(true) {
+        mSender.resend_expired_packets();
+        receivedACK = receivedFIN = receivedSYN = false;
+        
+        long rcvd_len = read_single_packet(&rcvd_packet);
+        if (rcvd_len > 0) {
+            if((mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, other_receive_window, receivedACK, receivedFIN, receivedSYN)) < 0)
+                perror("error receiving packet");
+        }
+        if(!(receivedFIN && receivedACK)) //wait for FINACK!!!
+            continue;
+        
+        //ok we got fin ack, lets ack and wait for 2 sec
+        mSender.notify_ACK(ackNum);
+        std::cout << "received FINack with sequence number " << receivedSequenceNumber << std::endl;
+        mReceiver.set_seq_num(receivedSequenceNumber + rcvd_len);
+        
+        mSender.update_other_rwnd(other_receive_window); //update sender with rwnd
+        mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
+        
+        char* ACKPacket;
+        size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
+        mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
+        std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
+        sequence_number = (sequence_number + ACKPacket_len) % 30720;
+        
+        time_t begin = time(NULL);
+        time_t now = time(NULL);
+        //wait and ack anything that comes in
+        while(difftime(now, begin) < 2) {
+            now = time(NULL);
+
+            mSender.resend_expired_packets();
+            long rcvd_len = read_single_packet(&rcvd_packet);
+            if (rcvd_len > 0) {
+                if((mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, other_receive_window, receivedACK, receivedFIN, receivedSYN)) < 0)
+                    perror("error receiving packet");
+            }
+            if(!(receivedFIN && receivedACK)) //wait for FINACK!!!
+                continue;
+            
+            //ok we got fin ack, lets ack
+            mSender.notify_ACK(ackNum);
+            std::cout << "received FINack with sequence number " << receivedSequenceNumber << std::endl;
+            mReceiver.set_seq_num(receivedSequenceNumber + rcvd_len);
+            
+            mSender.update_other_rwnd(other_receive_window); //update sender with rwnd
+            mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
+            
+            char* ACKPacket;
+            size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
+            mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
+            std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
+            sequence_number = (sequence_number + ACKPacket_len) % 30720;
+        }
+        std::cerr << "two second have passed, lets now return" << std::endl;
+        return;
+    }
+}
+
+//we received a fin already, lets just fin ack, wait for ack then leave
+void JJP::FIN_server(int receievedSequenceNumber) {
+    bool receivedFIN = false, receivedACK = false, receivedSYN = false;
+    char *rcvd_packet;
+    uint16_t ackNum, receivedSequenceNumber = 0;
+    //ok we got fin, now lets send a FINACK
+    std::cout << "received FIN with sequence number " << receivedSequenceNumber << std::endl;
+    
+    uint16_t fin_ack_seq_num = sequence_number;
+    char* fin_ack_packet = NULL;
+    size_t fin_ack_packet_len = mPacker.create_FINACK(&fin_ack_packet, sequence_number, receivedSequenceNumber);
+    mSender.send(fin_ack_packet, fin_ack_packet_len, sequence_number, false);
+    std::cout << "sending SYNACK with sequence number " << sequence_number << std::endl;
+    sequence_number = (sequence_number + fin_ack_packet_len) % 30720;
+    
+    //wait for ack, then leave
+    while(true){
+        mSender.resend_expired_packets();
+        
+        long rcvd_len = read_single_packet(&rcvd_packet);
+        if (rcvd_len > 0) {
+            if((mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, other_receive_window, receivedACK, receivedFIN, receivedSYN)) < 0)
+                perror("error receiving packet");
+        }
+        if(!(receivedACK && (ackNum == fin_ack_seq_num)))   //wait for FINACK!!!
+            continue;
+        std::cerr << "received ack for finACK, leaving program, ack num: " << ackNum << std::endl;
+           return;
+    }
+}
 
 void JJP::SYN_client() {
     bool receivedFIN = false, receivedACK = false, receivedSYN = false;

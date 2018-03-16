@@ -38,7 +38,7 @@ private:
     void processing_thread();
     void SYN_server();
     void SYN_client();
-    void FIN_server();
+    void FIN_server(int receievedSequenceNumber);
     void FIN_client();
 
 
