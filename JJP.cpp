@@ -75,7 +75,8 @@ void JJP::processing_thread2() {
     bool receivedFIN = false, receivedACK = false, receivedSYN = false;
     uint16_t sequence_number = 0;
     char *rcvd_packet, *sending_packet, *update_packet;
-    uint16_t ackNum, receiveWindow;
+    uint16_t ackNum, receivedSequenceNumber;
+    uint16_t receiveWindow = 5120;
     int isACKorFIN;
     //int updateTimer = 10; //every 10 loops when rwnd is 0 send update
     while(true) {
@@ -83,33 +84,32 @@ void JJP::processing_thread2() {
         long rcvd_len = read_single_packet(&rcvd_packet);
         if (rcvd_len > 0) {
           printf("Receiving packet of byte length %d\n", rcvd_len);
-          if((isACKorFIN = mReceiver.receive_packet(rcvd_packet, rcvd_len, ackNum, receiveWindow, receivedACK, receivedFIN, receivedSYN)) < 0)
+          if((isACKorFIN = mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, receiveWindow, receivedACK, receivedFIN, receivedSYN)) < 0)
               perror("error receiving packet");
         }
 
-        buf_mutex.unlock();
-        buf_mutex2.unlock();
             //todo,
                 //if Data, send ack with dontStore as true -done
                 //if FIN disconnect and begin ending
                 //if ACK notify sender -done
                 //update rwnd -done
 
-        std::lock(buf_mutex, buf_mutex2);
-        std::cout << "New rwnd: " << receiveWindow << std::endl;
+        //std::cout << "Bools: " << receivedACK << std::endl;
         mSender.update_other_rwnd(receiveWindow); //update sender with rwnd
         mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
-        if (receivedACK)
-          mSender.notify_ACK(ackNum);
-        /*
-        if (receivedFIN)
-          {}//
-        if (rcvd_len > 12) {
+
+        if ((rcvd_len > 12) || receivedFIN || receivedSYN) {
           char* ACKPacket;
-          size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, ackNum);
+          size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
           sequence_number = (sequence_number + ACKPacket_len) % 30720;
           mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
-        }*/
+          std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
+        }
+
+        if (receivedACK) {
+          std::cout << "Received ACK " << ackNum << std::endl;
+          mSender.notify_ACK(ackNum);
+       }
 
         uint32_t available_space = mSender.get_avaliable_space();
         if (available_space > 20)
@@ -222,6 +222,8 @@ size_t JJP::read_single_packet(char** packet) {
     }
 
     *packet = received_packet;
+    mSender.set_recipient((struct sockaddr*) client_addr, (socklen_t) clilen);
+
     return packet_len;
 }
 

@@ -47,7 +47,7 @@ size_t Packer::create_data_packet(char** buf, uint32_t len, uint16_t sequence_nu
         return 0;
     }
 
-    char* header = create_header(totalPacketSize, sequence_number, (uint16_t) 0, (uint16_t) 0, false, false, false);
+    char* header = create_header(totalPacketSize, sequence_number, (uint16_t) 0, rwnd, false, false, false);
 
     char* packet = (char*) malloc(sizeof(char)*totalPacketSize);
     memmove(packet, header, sizeof(char)*12);

@@ -89,7 +89,8 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
     //write to socket
     //if(sendto(mSockfd, "hello", strlen("hello"), 0, m_servaddr, m_servlen) == -1)
       //  perror("error:");
-    sendto(mSockfd, packet, packet_len, 0, m_servaddr, m_servlen);
+    if (sendto(mSockfd, packet, packet_len, 0, m_servaddr, m_servlen) == -1)
+      perror("sendto: ");
     std::cout << "Sending packet " << seq_num << " " << cwnd << std::endl;
 
     if(!dontStore) {

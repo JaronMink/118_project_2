@@ -22,21 +22,21 @@
 class Receiver {
 public:
     Receiver(); //init packet num
-    
+
     int read_packet();
     // returns -1 if invalid data, 0 if valid data, 1 if ACK
-    int receive_packet(char* packet, size_t packet_len, uint16_t &acknowledgement_num, uint16_t &receiver_window, bool &isAck, bool &isFin, bool &isSyn);
+    int receive_packet(char* packet, size_t packet_len, uint16_t& sequence_number, uint16_t &acknowledgement_num, uint16_t &receiver_window, bool &isAck, bool &isFin, bool &isSyn);
     //if data, send ACK (telegraph to JJP that we received data, ie return true)
     //if ACK, notify sender that packet has been successfully acked
     //if data
     //put into temporary buffer (update avaliable space)
-    
+
     size_t read(void *buf, size_t nbytes); //read from stored data
     //read from sstring, either up to nbytes or x bytes. return x bytes.
     size_t get_avaliable_space();
     //(5120) total space in bufer - sum of packet size in temp storage
     void set_sockfd(int sockfd) {mSockfd = sockfd;}
-    
+
 private:
     //update_temporary_storage //transfer valid data from temp storage to sstream
     struct packetPair
@@ -44,17 +44,17 @@ private:
         uint16_t seq_num;
         char* packet;
         size_t packet_len;
-        
+
         packetPair(uint16_t givenSeqNum, char* givenPacket, size_t givenPacketLen)  {
             seq_num = givenSeqNum;
             packet = givenPacket;
             packet_len = givenPacketLen;
         }
-        
+
         bool operator<(const struct packetPair& other) const
         {  return seq_num < other.seq_num; }
     };
-    
+
     //next expected packet, init to 0
     int mSockfd;
     uint16_t expected_packet_num;
