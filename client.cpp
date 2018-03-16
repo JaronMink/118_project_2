@@ -15,6 +15,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <iostream>
+#include <mutex>
+#include <thread>
 #include "JJP.h"
 
 void error(const char *msg)
@@ -35,7 +37,6 @@ void readFileContent(int fileFD, char** content, int* contentLen) {
   int bytesTotal = 0;
   int bytesRead = 0;
   while((bytesRead = read(fileFD, (fileStr + bytesTotal), fileLen - bytesRead)) > 0) {
-    std::cout << bytesTotal << std::endl;
     bytesTotal += bytesRead;
   }
   if(bytesRead < 0) {
@@ -91,18 +92,18 @@ int main(int argc, char *argv[])
     if( requestedFD >= 0) {
         char* fileContent = NULL;
         int fileLen = -1;
-        std::cout << requestedFD << std::endl;
         readFileContent(requestedFD, &fileContent, &fileLen);
 
         mJJP.write(fileContent, fileLen);
       }*/
 
 
-    n = mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+      n = mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+      mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+      mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+      mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+      mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+
     mJJP.connect((struct sockaddr*) &remaddr, sizeof(remaddr));
 
     //printf("Please enter the message: ");

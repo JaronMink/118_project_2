@@ -17,6 +17,7 @@
 #include <sstream>
 #include <queue>
 #include <time.h>
+#include <mutex>
 #include "Packer.h"
 #include "Sender.h"
 #include "Receiver.h"
@@ -30,6 +31,7 @@ public:
     int listen(int backlog);
     int accept(struct sockaddr *addr, socklen_t addrlen);
     int connect(struct sockaddr *addr, socklen_t addrlen);
+    int get_buf_size();
 
     ssize_t write(const void *buf, size_t nbytes);
     ssize_t read(void *buf, size_t nbytes);
@@ -51,6 +53,7 @@ private:
     int mSockfd;
     struct sockaddr_in client_addr;
     socklen_t clilen;
+    std::mutex* buf_mutex;
 };
 /**
  Max packet size = 1024 bytes

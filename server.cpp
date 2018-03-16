@@ -4,6 +4,7 @@
 #include <sys/socket.h>  // definitions of structures needed for sockets, e.g. sockaddr
 #include <sys/stat.h>    // structures for stat
 #include <netinet/in.h>  // constants and structures needed for internet domain addresses, e.g. sockaddr_in
+#include <thread>
 #include "JJP.h"
 
 void error(const char *msg)
@@ -61,11 +62,20 @@ int main(int argc, char *argv[])
 
     //mJJP.listen(5);  // 5 simultaneous connection at most
 
+
+    int n;
+    /*n = mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
+    */
+
     //accept connections and process them
     if (mJJP.accept((struct sockaddr *) &cli_addr, sizeof(cli_addr)) < 0)
       error("ERROR on accept");
 
-    int n;
+    //int n;
     char buffer[1024];
 
     memset(buffer, 0, 1024);  // reset memory
@@ -73,9 +83,14 @@ int main(int argc, char *argv[])
     //read client's message
     //while(1);
 
-    while((n = mJJP.read(buffer, 1023)) == 0);
-    if (n < 0) error("ERROR reading from socket");
-    printf("Received Message:\n%s\n", buffer);
+    //sleep(5);
+    while(true) {
+      while (mJJP.get_buf_size() == 0) usleep(10);
+
+      while((n = mJJP.read(buffer, 1023)) == 0) ;
+      if (n < 0) error("ERROR reading from socket");
+      printf("Received Message:\n%s\n", buffer);
+    }
 
     /*
     int requestedFD;
