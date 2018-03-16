@@ -36,7 +36,6 @@ public:
 
 private:
     void processing_thread();
-    void processing_thread2();
     void SYN_server();
     void SYN_client();
     void FIN_server();

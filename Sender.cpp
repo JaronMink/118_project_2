@@ -44,6 +44,7 @@ void Sender::notify_ACK(uint16_t seq_num) {
     for(std::list<PacketObj>::iterator it = packet_buffer.begin(); hasMovedWindow;) {
         if(it->isAcked) {
             next_byte-=it->packet_len;
+            free(it->packet);
             it = packet_buffer.erase(it);
             std::cerr << "moved window once\n";
             hasMovedWindow = true;
@@ -78,16 +79,15 @@ void Sender::resend_expired_packets() {
         }
     }
 }
-
+int x=0;
 size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dontStore){
     if(((long)get_avaliable_space() - (long) packet_len) < 0) { //if we don't have enough space to hold packet, do nothing
         std::cerr << "Not enough space!"<< std::endl;
         return 0;
     }
 
-    if (true)
+    if (x!=0 )
       {
-
 
 
     //write to socket
@@ -104,6 +104,7 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
         packet_buffer.push_back(new_packet_object);
         next_byte += packet_len;
     }
+    x++;
 
     return packet_len;
 }

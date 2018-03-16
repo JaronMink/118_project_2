@@ -23,6 +23,7 @@
 
 Packer::Packer() {
     bufLen = 0;
+    rwnd = 5120;
 }
 size_t Packer::store(const char* str, size_t len) {
     bufLen+=len;
