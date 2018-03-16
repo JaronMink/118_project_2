@@ -56,13 +56,14 @@ int main(int argc, char *argv[])
     struct sockaddr_in myaddr, remaddr;
 
     char buffer[256];
-    if (argc < 3) {
-       fprintf(stderr,"usage %s hostname port\n", argv[0]);
+    if (argc < 4) {
+       fprintf(stderr,"usage %s hostname port filename\n", argv[0]);
        exit(0);
     }
 
     char* server = argv[1];
     portno = atoi(argv[2]);
+    char* filename = argv[3];
     JJP mJJP(AF_INET, SOCK_DGRAM, 0);
 
     memset((char *)&myaddr, 0, sizeof(myaddr));
@@ -104,7 +105,7 @@ int main(int argc, char *argv[])
       mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
       mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
       */
-    mJJP.write("test.txt",strlen("test.txt"));
+    mJJP.write(filename,strlen(filename));
 
     mJJP.connect((struct sockaddr*) &remaddr, sizeof(remaddr));
 

@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
       if (n < 0) error("ERROR reading from socket");
       printf("Received Message:\n%s\n", buffer);
 
-      int requestedFD = open("test.txt", O_RDONLY);
+      int requestedFD = open(buffer, O_RDONLY);
       if( requestedFD >= 0) {
           char* fileContent = NULL;
           int fileLen = -1;
