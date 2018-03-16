@@ -54,7 +54,7 @@ public:
 
     bool packet_has_timed_out(PacketObj packet_obj) {
         time_t now = time(0);
-        if(difftime(now, packet_obj.sent_time) > 500/1000.0) {
+        if(difftime(now, packet_obj.sent_time)*1000.0 > 500.0) {
             std::cout<< now << " " << packet_obj.sent_time  << " " <<packet_obj.sequence_num << " has timed ou t" << std::endl;
             return true;
         }
