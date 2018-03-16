@@ -29,8 +29,8 @@ public:
     void set_sockfd(int sockfd) {mSockfd = sockfd;}
     void set_recipient(struct sockaddr *addr, socklen_t addrlen);
     
-    void update_cwnd(size_t new_wnd) {cwnd = new_wnd;}
-    void update_rwnd(size_t new_wnd) {rwnd = new_wnd;}
+    void update_own_cwnd(size_t new_wnd) {cwnd = new_wnd;}
+    void update_other_rwnd(size_t new_wnd) {rwnd = new_wnd;}
     void notify_ACK(uint16_t seq_num);
 //private:
     // size_t send_packet(char* packet, size_t packet_len);

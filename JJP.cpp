@@ -77,7 +77,7 @@ void JJP::processing_thread2() {
     char *rcvd_packet, *sending_packet, *update_packet;
     uint16_t ackNum, receiveWindow;
     int isACKorFIN;
-    int updateTimer = 10; //every 10 loops when rwnd is 0 send update
+    //int updateTimer = 10; //every 10 loops when rwnd is 0 send update
     while(true) {
         std::lock(buf_mutex, buf_mutex2);
         long rcvd_len = read_single_packet(&rcvd_packet);
@@ -97,7 +97,8 @@ void JJP::processing_thread2() {
 
         std::lock(buf_mutex, buf_mutex2);
         std::cout << "New rwnd: " << receiveWindow << std::endl;
-        //mSender.update_rwnd(receiveWindow);
+        mSender.update_other_rwnd(receiveWindow); //update sender with rwnd
+        mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
         if (receivedACK)
           mSender.notify_ACK(ackNum);
         /*
