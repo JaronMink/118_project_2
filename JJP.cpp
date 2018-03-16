@@ -31,6 +31,7 @@ JJP::JJP(int domain, int type, int protocol){
       perror("ERROR opening socket");
     mSender.set_sockfd(mSockfd);
     mReceiver.set_sockfd(mSockfd);
+    clilen = sizeof(client_addr);
 }
 
 JJP::~JJP() {
@@ -79,11 +80,17 @@ void JJP::processing_thread2() {
     uint16_t receiveWindow = 5120;
     int isACKorFIN;
     //int updateTimer = 10; //every 10 loops when rwnd is 0 send update
+    int x = 0;
     while(true) {
+        //if (x % 3 == 0)
+        //  sleep(5);
+        x++;
+        receivedACK = receivedFIN = receivedSYN = false;
+
         std::lock(buf_mutex, buf_mutex2);
         long rcvd_len = read_single_packet(&rcvd_packet);
         if (rcvd_len > 0) {
-          printf("Receiving packet of byte length %d\n", rcvd_len);
+          //printf("Receiving packet of byte length %d\n", rcvd_len);
           if((isACKorFIN = mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, receiveWindow, receivedACK, receivedFIN, receivedSYN)) < 0)
               perror("error receiving packet");
         }
@@ -94,7 +101,6 @@ void JJP::processing_thread2() {
                 //if ACK notify sender -done
                 //update rwnd -done
 
-        //std::cout << "Bools: " << receivedACK << std::endl;
         mSender.update_other_rwnd(receiveWindow); //update sender with rwnd
         mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
 
@@ -112,15 +118,15 @@ void JJP::processing_thread2() {
        }
 
         uint32_t available_space = mSender.get_avaliable_space();
-        if (available_space > 20)
-          available_space = 20;
+        if (available_space > 1024)
+          available_space = 1024;
         size_t sending_packet_len = mPacker.create_data_packet(&sending_packet, available_space, sequence_number);
         if (sending_packet_len > 0) {
-          printf("Packet length: %d\n", sending_packet_len);
+          //printf("Packet length: %d\n", sending_packet_len);
           mSender.send(sending_packet, available_space, sequence_number, false);
           sequence_number = (sequence_number + sending_packet_len) % 30720;
         }
-        //mSender.resend_expired_packets();
+        mSender.resend_expired_packets();
 
         /*
 
@@ -194,10 +200,9 @@ void JJP::processing_thread() {
 
 size_t JJP::read_single_packet(char** packet) {
     char header[12];
-    struct sockaddr_in* client_addr;
-    socklen_t clilen = sizeof(client_addr);
 
-    long totalBytesRead = ::recvfrom(mSockfd, header, 12, 0, (struct sockaddr*) client_addr, &clilen);
+
+    long totalBytesRead = ::recvfrom(mSockfd, header, 12, 0, (struct sockaddr*) &client_addr, &clilen);
 
     //if we didn't read anything, assume we don't have any data to read.
     if (totalBytesRead <= 0) {
@@ -205,24 +210,24 @@ size_t JJP::read_single_packet(char** packet) {
         return 0;
     }
     while(totalBytesRead != 12) {
-        totalBytesRead += ::recvfrom(mSockfd, header+totalBytesRead, 12-totalBytesRead, 0, (struct sockaddr*) client_addr, &clilen);
+        totalBytesRead += ::recvfrom(mSockfd, header+totalBytesRead, 12-totalBytesRead, 0, (struct sockaddr*) &client_addr, &clilen);
     }
     uint32_t packet_len = 0;
     memmove((char*) &packet_len, header, 4);
-    std::cerr << "received packet len:" << packet_len << std::endl;
+    //std::cerr << "received packet len:" << packet_len << std::endl;
     char* received_packet = (char *) malloc(sizeof(char) * packet_len);
     //move header into packet
     memmove(received_packet, header, 12);
 
     size_t data_len = packet_len - 12;
 
-    totalBytesRead = ::recvfrom(mSockfd, packet+12, data_len, 0, (struct sockaddr*) client_addr, &clilen);
+    totalBytesRead = ::recvfrom(mSockfd, packet+12, data_len, 0, (struct sockaddr*) &client_addr, &clilen);
     while(totalBytesRead < data_len) {
-        totalBytesRead += ::recvfrom(mSockfd, packet+12+totalBytesRead, data_len-totalBytesRead, 0, (struct sockaddr*) client_addr, &clilen);
+        totalBytesRead += ::recvfrom(mSockfd, packet+12+totalBytesRead, data_len-totalBytesRead, 0, (struct sockaddr*) &client_addr, &clilen);
     }
 
     *packet = received_packet;
-    mSender.set_recipient((struct sockaddr*) client_addr, (socklen_t) clilen);
+    mSender.set_recipient((struct sockaddr*) &client_addr, (socklen_t) clilen);
 
     return packet_len;
 }

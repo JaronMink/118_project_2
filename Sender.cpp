@@ -32,9 +32,7 @@ Sender::Sender() {
 
 //set isACK for PacketObj that matches and move up window as much as we can
 void Sender::notify_ACK(uint16_t seq_num) {
-    std::cout << "In notify_ACK" << std::endl;
     for(std::list<PacketObj>::iterator it = packet_buffer.begin(); it != packet_buffer.end(); it++) {
-      std::cout << it->sequence_num << std::endl;
         if(it->sequence_num == seq_num) {
             it->isAcked = true;
             break;
@@ -86,11 +84,18 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
         std::cerr << "Not enough space!"<< std::endl;
         return 0;
     }
+
+    if (true)
+      {
+
+
+
     //write to socket
     //if(sendto(mSockfd, "hello", strlen("hello"), 0, m_servaddr, m_servlen) == -1)
       //  perror("error:");
     if (sendto(mSockfd, packet, packet_len, 0, m_servaddr, m_servlen) == -1)
       perror("sendto: ");
+    }
     std::cout << "Sending packet " << seq_num << " " << cwnd << std::endl;
 
     if(!dontStore) {

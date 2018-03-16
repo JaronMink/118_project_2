@@ -71,12 +71,13 @@ int main(int argc, char *argv[])
     memset(buffer, 0, 1024);  // reset memory
 
     //read client's message
-    while(1);
+    //while(1);
 
     while((n = mJJP.read(buffer, 1023)) == 0);
     if (n < 0) error("ERROR reading from socket");
     printf("Received Message:\n%s\n", buffer);
 
+    /*
     int requestedFD;
     if((requestedFD = open("test.txt", O_RDONLY)) < 0) {
         char* fileContent = NULL;
@@ -88,6 +89,7 @@ int main(int argc, char *argv[])
         char* error404Msg = "Error 404, resource not found";
         mJJP.write(error404Msg, strlen(error404Msg));
       }
+      */
 
     //reply to client
     if (n < 0) error("ERROR writing to socket");

@@ -43,8 +43,8 @@ private:
     Sender mSender;
     Receiver mReceiver;
     int mSockfd;
-    //struct sockaddr_in* client_addr;
-    //socklen_t clilen = sizeof(client_addr);
+    struct sockaddr_in client_addr;
+    socklen_t clilen;
 };
 /**
  Max packet size = 1024 bytes

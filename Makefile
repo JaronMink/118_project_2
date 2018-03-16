@@ -8,5 +8,7 @@ server:
 	g++ -std=c++11 -pthread -Wall -O2 -o server server.cpp JJP.o Receiver.o Packer.o Sender.o
 client:
 	g++ -std=c++11 -pthread -Wall -O2 -o client client.cpp JJP.o Receiver.o Packer.o Sender.o
+debug:
+	g++ -g -std=c++11 -pthread -Wall -Og -o client client.cpp JJP.o Receiver.o Packer.o Sender.o
 clean:
 	rm -f JJP.o Receiver.o Packer.o Sender.o main server client

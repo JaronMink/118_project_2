@@ -44,7 +44,7 @@ int Receiver::receive_packet(char* packet, size_t packet_len, uint16_t& sequence
     memmove((char*)&acknowledgement_num, header+6, 2);
     memmove((char*)&receiver_window, header+8, 2);
     memmove((char*)&flags, header+10, 2);
-    std::cout<<flags<<std::endl;
+
     isACK = ((flags & (0x1<<15)) != 0);
     isFIN = ((flags & (0x1<<14)) != 0);
     isSYN = ((flags & (0x1<<13)) != 0);
