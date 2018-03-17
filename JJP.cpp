@@ -154,12 +154,11 @@ void JJP::FIN_client() {
 }
 
 //we received a fin already, lets just fin, we we get ack, return
-void JJP::FIN_server(int receievedSequenceNumber) {
+void JJP::FIN_server() {
     bool receivedFIN = false, receivedACK = false, receivedSYN = false;
     char *rcvd_packet;
     uint16_t ackNum, receivedSequenceNumber;
     //ok we got fin, now lets send a FINA
-    std::cout << "received FIN with sequence number " << receivedSequenceNumber << std::endl;
 
     uint16_t fin_ack_seq_num = sequence_number;
     char* fin_ack_packet = NULL;
@@ -312,6 +311,12 @@ void JJP::processing_thread(bool isClient) {
           //if (isClient)
             std::cout << "Sending packet " << sequence_number << " ACK" << std::endl;
           sequence_number = (sequence_number + ACKPacket_len) % 30720;
+            if(receivedFIN) {
+                std::cerr << "received a fin!" << std::endl;
+                FIN = true;
+                FIN_server();
+                continue;
+            }
         }
 
         if (receivedACK) {

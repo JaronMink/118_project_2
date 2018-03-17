@@ -18,6 +18,7 @@
 #include <queue>
 #include <time.h>
 #include <mutex>
+#include <thread>
 #include "Packer.h"
 #include "Sender.h"
 #include "Receiver.h"
@@ -41,9 +42,9 @@ private:
     void processing_thread(bool isClient);
     void SYN_server();
     void SYN_client();
-    void FIN_server(int receievedSequenceNumber);
+    void FIN_server();
     void FIN_client();
-    std::thread* threadPtr;
+    std::thread *threadPtr;
 
     bool FIN;
     size_t read_single_packet(char** packet);
