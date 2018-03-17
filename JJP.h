@@ -32,6 +32,7 @@ public:
     int accept(struct sockaddr *addr, socklen_t addrlen);
     int connect(struct sockaddr *addr, socklen_t addrlen);
     int get_buf_size();
+    int close();
 
     ssize_t write(const void *buf, size_t nbytes);
     ssize_t read(void *buf, size_t nbytes);
@@ -42,8 +43,9 @@ private:
     void SYN_client();
     void FIN_server(int receievedSequenceNumber);
     void FIN_client();
+    std::thread* threadPtr;
 
-
+    bool FIN;
     size_t read_single_packet(char** packet);
     Packer mPacker;
     Sender mSender;

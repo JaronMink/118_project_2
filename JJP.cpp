@@ -36,11 +36,11 @@ JJP::JJP(int domain, int type, int protocol){
     mReceiver.set_sockfd(mSockfd);
     clilen = sizeof(client_addr);
     buf_mutex = new std::mutex();
+    FIN = false;
 }
 
 JJP::~JJP() {
-    delete(buf_mutex);
-    close(mSockfd);
+  
 }
 
 int JJP::setsockopt(int level, int optname, const void *optval, socklen_t optlen){
@@ -70,7 +70,7 @@ void JJP::FIN_client() {
 
     bool receivedFIN = false, receivedACK = false, receivedSYN = false;
     char *rcvd_packet, *fin_packet;
-    uint16_t ackNum, receivedSequenceNumber = 0;
+    uint16_t ackNum, receivedSequenceNumber;
 
     //send FIN
     size_t fin_packet_len = mPacker.create_FIN(&fin_packet, sequence_number);
@@ -89,10 +89,23 @@ void JJP::FIN_client() {
             if((mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, other_receive_window, receivedACK, receivedFIN, receivedSYN)) < 0)
                 perror("error receiving packet");
         }
-        if(!(receivedFIN && receivedACK)) //wait for FINACK!!!
+        if ((rcvd_len > 12) || receivedFIN || receivedSYN) {
+            char* ACKPacket;
+            size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
+            mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
+            sequence_number = (sequence_number + ACKPacket_len) % 30720;
+        }
+        
+        if (receivedACK) {
+            std::cout << "Receiving packet " << receivedSequenceNumber << std::endl;
+            mSender.notify_ACK(ackNum);
+        }
+        
+        
+        if(!receivedFIN) //wait for FINACK!!!
             continue;
 
-        //ok we got fin ack, lets ack and wait for 2 sec
+        //ok we got fin ack, lets ack and wait for 3 sec
         mSender.notify_ACK(ackNum);
         std::cout << "received FINack with sequence number " << receivedSequenceNumber << std::endl;
         mReceiver.set_seq_num(receivedSequenceNumber + rcvd_len);
@@ -109,7 +122,7 @@ void JJP::FIN_client() {
         time_t begin = time(NULL);
         time_t now = time(NULL);
         //wait and ack anything that comes in
-        while(difftime(now, begin) < 2) {
+        while(difftime(now, begin) < 3) {
             now = time(NULL);
 
             mSender.resend_expired_packets();
@@ -118,7 +131,7 @@ void JJP::FIN_client() {
                 if((mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, other_receive_window, receivedACK, receivedFIN, receivedSYN)) < 0)
                     perror("error receiving packet");
             }
-            if(!(receivedFIN && receivedACK)) //wait for FINACK!!!
+            if(!(receivedFIN)) //wait for FIN from serer!!!
                 continue;
 
             //ok we got fin ack, lets ack
@@ -135,24 +148,24 @@ void JJP::FIN_client() {
             std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
             sequence_number = (sequence_number + ACKPacket_len) % 30720;
         }
-        std::cerr << "two second have passed, lets now return" << std::endl;
+        std::cerr << "three second have passed, lets now return" << std::endl;
         return;
     }
 }
 
-//we received a fin already, lets just fin ack, wait for ack then leave
+//we received a fin already, lets just fin, we we get ack, return
 void JJP::FIN_server(int receievedSequenceNumber) {
     bool receivedFIN = false, receivedACK = false, receivedSYN = false;
     char *rcvd_packet;
     uint16_t ackNum, receivedSequenceNumber;
-    //ok we got fin, now lets send a FINACK
+    //ok we got fin, now lets send a FINA
     std::cout << "received FIN with sequence number " << receivedSequenceNumber << std::endl;
 
     uint16_t fin_ack_seq_num = sequence_number;
     char* fin_ack_packet = NULL;
-    size_t fin_ack_packet_len = mPacker.create_FINACK(&fin_ack_packet, sequence_number, receivedSequenceNumber);
+    size_t fin_ack_packet_len = mPacker.create_FIN(&fin_ack_packet, sequence_number);
     mSender.send(fin_ack_packet, fin_ack_packet_len, sequence_number, false);
-    std::cout << "sending SYNACK with sequence number " << sequence_number << std::endl;
+    std::cout << "sending FIN with sequence number " << sequence_number << std::endl;
     sequence_number = (sequence_number + fin_ack_packet_len) % 30720;
 
     //wait for ack, then leave
@@ -167,7 +180,8 @@ void JJP::FIN_server(int receievedSequenceNumber) {
         if(!(receivedACK && (ackNum == fin_ack_seq_num)))   //wait for FINACK!!!
             continue;
         std::cerr << "received ack for finACK, leaving program, ack num: " << ackNum << std::endl;
-           return;
+        
+        return;
     }
 }
 
@@ -272,7 +286,7 @@ void JJP::processing_thread(bool isClient) {
 
     uint16_t ackNum, receivedSequenceNumber;
     //int updateTimer = 10; //every 10 loops when rwnd is 0 send update
-    while(true) {
+    while(FIN == false) {
         receivedACK = receivedFIN = receivedSYN = false;
 
         buf_mutex->lock();
@@ -320,6 +334,7 @@ void JJP::processing_thread(bool isClient) {
         if (available_space > 1024)
           available_space = 1024;
         size_t sending_packet_len = mPacker.create_data_packet(&sending_packet, available_space, sequence_number);
+        
         if (sending_packet_len > 0) {
           mSender.send(sending_packet, sending_packet_len, sequence_number, false);
           //if (!isClient)
@@ -379,7 +394,8 @@ size_t JJP::read_single_packet(char** packet) {
     *packet = received_packet;
 
     mSender.set_recipient((struct sockaddr*) &client_addr, (socklen_t) clilen);
-
+    
+    
     return packet_len;
 }
 
@@ -389,8 +405,8 @@ int JJP::accept(struct sockaddr *addr, socklen_t addrlen){
   SYN_server();
 
   std::thread process(&JJP::processing_thread, this, false);
-  process.detach();
-
+  //process.detach();
+    threadPtr = &process;
   return 0;
 }
 
@@ -400,7 +416,8 @@ int JJP::connect(struct sockaddr *addr, socklen_t addrlen){
   SYN_client();
 
   std::thread process(&JJP::processing_thread, this, true);
-  process.detach();
+    threadPtr = &process;
+//  process.detach();
 
   return 0;
 }
@@ -411,6 +428,18 @@ ssize_t JJP::write(const void *buf, size_t nbytes) {
     buf_mutex->unlock();
     return i;
 }
+
+int JJP::close() {
+    bool already_FIN = FIN;
+    FIN = true;
+    threadPtr->join();
+    if(!already_FIN) //if we haven't fin yet, fin, else just leave
+        FIN_client();
+    delete(buf_mutex);
+    ::close(mSockfd);
+    return 0;
+}
+
 
 ssize_t JJP::read(void *buf, size_t nbytes) {
     buf_mutex->lock();

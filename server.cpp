@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
           char* fileContent = NULL;
           int fileLen = -1;
           readFileContent(requestedFD, &fileContent, &fileLen);
-
+	  
           mJJP.write(fileContent, fileLen);
         }
       else {

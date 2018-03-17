@@ -28,6 +28,7 @@ Packer::Packer() {
 size_t Packer::store(const char* str, size_t len) {
     bufLen+=len;
     bufSS.write(str, len);
+   
     return len; //assume we wrote the whole thing
 }
 

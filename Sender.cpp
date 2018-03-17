@@ -79,13 +79,15 @@ void Sender::resend_expired_packets() {
         }
     }
 }
-
+int x = 0;
 size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dontStore){
     if(((long)get_avaliable_space() - (long) packet_len) < 0) { //if we don't have enough space to hold packet, do nothing
         std::cerr << "Not enough space!"<< std::endl;
         return 0;
     }
-
+    std::cerr << "sending with pack len " << packet_len <<":";
+    write(1, packet+12, packet_len-12);
+    std::cerr << std::endl;
     if (true)
       {
 
@@ -96,9 +98,11 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
     if (sendto(mSockfd, packet, packet_len, 0, m_servaddr, m_servlen) == -1)
       perror("sendto: ");
     }
+    x++;
     //std::cout << "Sending packet " << seq_num << " " << cwnd; //<< std::endl;
 
     if(!dontStore) {
+        
         //store in object
         PacketObj new_packet_object(packet, packet_len, seq_num);
         packet_buffer.push_back(new_packet_object);
