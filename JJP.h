@@ -33,6 +33,9 @@ public:
     int accept(struct sockaddr *addr, socklen_t addrlen);
     int connect(struct sockaddr *addr, socklen_t addrlen);
     int get_buf_size();
+    bool isDisconnected() {
+      std::cout << isDisconnectedBool << " ";
+      return isDisconnectedBool; }
     int close();
 
     ssize_t write(const void *buf, size_t nbytes);
@@ -46,7 +49,7 @@ private:
     void FIN_client();
     std::thread *threadPtr;
 
-    bool FIN;
+    bool FIN, isDisconnectedBool;
     size_t read_single_packet(char** packet);
     Packer mPacker;
     Sender mSender;

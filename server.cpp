@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
           char* fileContent = NULL;
           int fileLen = -1;
           readFileContent(requestedFD, &fileContent, &fileLen);
-	  
+
           mJJP.write(fileContent, fileLen);
         }
       else {
@@ -96,11 +96,8 @@ int main(int argc, char *argv[])
       }
       break;
     }
-    while(true);
+    //while(true);
 
-    //reply to client
-    if (n < 0) error("ERROR writing to socket");
-
-    //close(sockfd); // taken care of by JJP destructor
+    mJJP.close(); // taken care of by JJP destructor
     return 0;
 }

@@ -37,10 +37,11 @@ JJP::JJP(int domain, int type, int protocol){
     clilen = sizeof(client_addr);
     buf_mutex = new std::mutex();
     FIN = false;
+    isDisconnectedBool = false;
 }
 
 JJP::~JJP() {
-  
+
 }
 
 int JJP::setsockopt(int level, int optname, const void *optval, socklen_t optlen){
@@ -95,13 +96,13 @@ void JJP::FIN_client() {
             mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
             sequence_number = (sequence_number + ACKPacket_len) % 30720;
         }
-        
+
         if (receivedACK) {
             std::cout << "Receiving packet " << receivedSequenceNumber << std::endl;
             mSender.notify_ACK(ackNum);
         }
-        
-        
+
+
         if(!receivedFIN) //wait for FINACK!!!
             continue;
 
@@ -123,6 +124,8 @@ void JJP::FIN_client() {
         time_t now = time(NULL);
         //wait and ack anything that comes in
         while(difftime(now, begin) < 3) {
+          receivedACK = receivedFIN = receivedSYN = false;
+
             now = time(NULL);
 
             mSender.resend_expired_packets();
@@ -131,22 +134,26 @@ void JJP::FIN_client() {
                 if((mReceiver.receive_packet(rcvd_packet, rcvd_len, receivedSequenceNumber, ackNum, other_receive_window, receivedACK, receivedFIN, receivedSYN)) < 0)
                     perror("error receiving packet");
             }
-            if(!(receivedFIN)) //wait for FIN from serer!!!
-                continue;
 
-            //ok we got fin ack, lets ack
-            mSender.notify_ACK(ackNum);
-            std::cout << "received FINack with sequence number " << receivedSequenceNumber << std::endl;
+            if (rcvd_len > 12 || receivedFIN || receivedSYN) {
+              char* ACKPacket;
+              size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
+              mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
+              //std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
+              sequence_number = (sequence_number + ACKPacket_len) % 30720;
+            }
+
             mReceiver.set_seq_num(receivedSequenceNumber + rcvd_len);
 
             mSender.update_other_rwnd(other_receive_window); //update sender with rwnd
             mPacker.update_own_rwnd(mReceiver.get_avaliable_space());
 
-            char* ACKPacket;
-            size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
-            mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
-            std::cout << "Sending ACK " <<  receivedSequenceNumber << " len" << ACKPacket_len << std::endl;
-            sequence_number = (sequence_number + ACKPacket_len) % 30720;
+            if(receivedACK) {
+              //ok we got fin ack, lets ack
+              mSender.notify_ACK(ackNum);
+
+              std::cerr << "received ack with sequence number " << receivedSequenceNumber << std::endl;
+            }
         }
         std::cerr << "three second have passed, lets now return" << std::endl;
         return;
@@ -179,7 +186,9 @@ void JJP::FIN_server() {
         if(!(receivedACK && (ackNum == fin_ack_seq_num)))   //wait for FINACK!!!
             continue;
         std::cerr << "received ack for finACK, leaving program, ack num: " << ackNum << std::endl;
-        
+
+        isDisconnectedBool = true;
+
         return;
     }
 }
@@ -339,7 +348,7 @@ void JJP::processing_thread(bool isClient) {
         if (available_space > 1024)
           available_space = 1024;
         size_t sending_packet_len = mPacker.create_data_packet(&sending_packet, available_space, sequence_number);
-        
+
         if (sending_packet_len > 0) {
           mSender.send(sending_packet, sending_packet_len, sequence_number, false);
           //if (!isClient)
@@ -399,8 +408,8 @@ size_t JJP::read_single_packet(char** packet) {
     *packet = received_packet;
 
     mSender.set_recipient((struct sockaddr*) &client_addr, (socklen_t) clilen);
-    
-    
+
+
     return packet_len;
 }
 
@@ -409,9 +418,7 @@ int JJP::accept(struct sockaddr *addr, socklen_t addrlen){
 
   SYN_server();
 
-  std::thread process(&JJP::processing_thread, this, false);
-  //process.detach();
-    threadPtr = &process;
+  threadPtr = new std::thread(&JJP::processing_thread, this, true);
   return 0;
 }
 
@@ -419,9 +426,7 @@ int JJP::connect(struct sockaddr *addr, socklen_t addrlen){
   mSender.set_recipient(addr,addrlen);
 
   SYN_client();
-
-  std::thread process(&JJP::processing_thread, this, true);
-    threadPtr = &process;
+  threadPtr = new std::thread(&JJP::processing_thread, this, true);
 //  process.detach();
 
   return 0;
@@ -442,6 +447,7 @@ int JJP::close() {
         FIN_client();
     delete(buf_mutex);
     ::close(mSockfd);
+    isDisconnectedBool = true;
     return 0;
 }
 

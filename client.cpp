@@ -100,23 +100,14 @@ int main(int argc, char *argv[])
     while(true) {
       while (mJJP.get_buf_size() == 0) usleep(10);
 
-      while((n = mJJP.read(buffer, 1023)) == 0) ;
+      while(((n = mJJP.read(buffer, 1023)) == 0)) ;
       if (n < 0) error("ERROR reading from socket");
       //      printf("Received Message:\n%s\n", buffer);
       write(file_fd, buffer, n);
+      std::cerr <<"blah";
     }
 
-    //n = mJJP.write("Hello",strlen("Hello"));  // write to the socket
-    if (n < 0)
-         error("ERROR writing to socket");
-
-    memset(buffer,0,256);
-    while ((n = mJJP.read(buffer,255)) == 0);  // read from the socket
-    if (n < 0)
-         error("ERROR reading from socket");
-    printf("%s\n",buffer);  // print server's response
-
-    //close(sockfd);  // taken care of by JJP destructor
+    mJJP.close();  // taken care of by JJP destructor
 
     return 0;
 }

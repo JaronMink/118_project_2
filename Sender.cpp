@@ -85,9 +85,6 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
         std::cerr << "Not enough space!"<< std::endl;
         return 0;
     }
-    std::cerr << "sending with pack len " << packet_len <<":";
-    write(1, packet+12, packet_len-12);
-    std::cerr << std::endl;
     if (true)
       {
 
@@ -102,7 +99,7 @@ size_t Sender::send(char* packet, size_t packet_len, uint16_t seq_num, bool dont
     //std::cout << "Sending packet " << seq_num << " " << cwnd; //<< std::endl;
 
     if(!dontStore) {
-        
+
         //store in object
         PacketObj new_packet_object(packet, packet_len, seq_num);
         packet_buffer.push_back(new_packet_object);
