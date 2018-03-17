@@ -64,22 +64,6 @@ int main(int argc, char *argv[])
 
 
     int n;
-    /*n = mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-    mJJP.write("HelloHelloHelloHelloHello",strlen("HelloHelloHelloHelloHello"));  // write to the socket
-
-
-    int requestedFD = open("test.txt", O_RDONLY);
-    if( requestedFD >= 0) {
-        char* fileContent = NULL;
-        int fileLen = -1;
-        readFileContent(requestedFD, &fileContent, &fileLen);
-
-        mJJP.write(fileContent, fileLen);
-      }
-      */
 
     //accept connections and process them
     if (mJJP.accept((struct sockaddr *) &cli_addr, sizeof(cli_addr)) < 0)
@@ -107,6 +91,9 @@ int main(int argc, char *argv[])
 
           mJJP.write(fileContent, fileLen);
         }
+      else {
+          mJJP.write("Error, file does not exist.", strlen("Error, file does not exist."));
+      }
       break;
     }
     while(true);

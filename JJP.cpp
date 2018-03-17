@@ -295,8 +295,8 @@ void JJP::processing_thread(bool isClient) {
           char* ACKPacket;
           size_t ACKPacket_len = mPacker.create_ACK(&ACKPacket, sequence_number, receivedSequenceNumber);
           mSender.send(ACKPacket, ACKPacket_len, sequence_number, true);
-          if (isClient)
-            std::cout << "Sending packet " <<  receivedSequenceNumber << std::endl;
+          //if (isClient)
+            std::cout << "Sending packet " << sequence_number << " ACK" << std::endl;
           sequence_number = (sequence_number + ACKPacket_len) % 30720;
         }
 
@@ -321,12 +321,11 @@ void JJP::processing_thread(bool isClient) {
           available_space = 1024;
         size_t sending_packet_len = mPacker.create_data_packet(&sending_packet, available_space, sequence_number);
         if (sending_packet_len > 0) {
-          mSender.send(sending_packet, available_space, sequence_number, false);
-          if (!isClient)
+          mSender.send(sending_packet, sending_packet_len, sequence_number, false);
+          //if (!isClient)
             std::cout << "Sending packet " << sequence_number << " " << mSender.get_cwnd() << std::endl;
           sequence_number = (sequence_number + sending_packet_len) % 30720;
         }
-
 
         /*
 

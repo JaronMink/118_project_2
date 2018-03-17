@@ -58,8 +58,12 @@ int Receiver::receive_packet(char* packet, size_t packet_len, uint16_t& sequence
 
     if (get_avaliable_space() > 0)
     {
-        storage_queue.push(pPair);
-        used_space += packet_len;
+          if (packet_length > 12) {
+            storage_queue.push(pPair);
+            used_space += packet_len;
+          }
+          else
+            expected_packet_num = (expected_packet_num + packet_length) % 30720;
     }
 
     while (!storage_queue.empty() && storage_queue.top().seq_num == expected_packet_num) {
@@ -82,7 +86,7 @@ size_t Receiver::read(void *buf, size_t nbytes){
       bufSS.str("");
       bufSS.clear();
     }
-    return bufSS.gcount();
+     return bufSS.gcount();
 }
 
 size_t Receiver::get_avaliable_space(){

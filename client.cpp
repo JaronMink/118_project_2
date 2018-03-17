@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
     char* server = argv[1];
     portno = atoi(argv[2]);
     char* filename = argv[3];
+
     JJP mJJP(AF_INET, SOCK_DGRAM, 0);
 
     memset((char *)&myaddr, 0, sizeof(myaddr));
@@ -75,10 +76,6 @@ int main(int argc, char *argv[])
   		perror("bind failed");
   		return 0;
   	}
-
-  	/* now define remaddr, the address to whom we want to send messages */
-  	/* For convenience, the host address is expressed as a numeric IP address */
-  	/* that we will convert to a binary format via inet_aton */
 
   	memset((char *) &remaddr, 0, sizeof(remaddr));
   	remaddr.sin_family = AF_INET;
@@ -96,7 +93,7 @@ int main(int argc, char *argv[])
     //memset(buffer,0, 256);
     //fgets(buffer,255,stdin);  // read message
 
-    int file_fd = open("received.data",O_WRONLY);
+    int file_fd = open("received.data",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
     if (file_fd < 0) {
       perror("fopen");
     }
