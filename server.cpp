@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
       else {
           mJJP.write("Error, file does not exist.", strlen("Error, file does not exist."));
       }
+      sleep(1);
       break;
     }
     //while(true);

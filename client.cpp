@@ -97,14 +97,15 @@ int main(int argc, char *argv[])
     if (file_fd < 0) {
       perror("fopen");
     }
-    while(true) {
-      while (mJJP.get_buf_size() == 0) usleep(10);
+    while(!mJJP.isDisconnected()) {
+      while (!mJJP.isDisconnected() && mJJP.get_buf_size() == 0) usleep(10);
 
-      while(((n = mJJP.read(buffer, 1023)) == 0)) ;
+      while(!mJJP.isDisconnected() && ((n = mJJP.read(buffer, 1023)) == 0)) ;
+      if (mJJP.isDisconnected())
+        break;
       if (n < 0) error("ERROR reading from socket");
-      //      printf("Received Message:\n%s\n", buffer);
+      //printf("Received Message:\n%s\n", buffer);
       write(file_fd, buffer, n);
-      std::cerr <<"blah";
     }
 
     mJJP.close();  // taken care of by JJP destructor
