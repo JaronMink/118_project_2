@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     //memset(buffer,0, 256);
     //fgets(buffer,255,stdin);  // read message
 
-    int file_fd = open("received.data",O_WRONLY);
+    int file_fd = open("received.data",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
     if (file_fd < 0) {
       perror("fopen");
     }
